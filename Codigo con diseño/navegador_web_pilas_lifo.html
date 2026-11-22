@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Navegador Web (Pilas - LIFO)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f0ff;
+        }
+        /* Transiciones suaves */
+        .transition-all-custom {
+            transition: all 0.25s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 p-4 md:p-8 flex justify-center items-center">
+
+    <!-- Contenedor Principal de la Aplicación -->
+    <div class="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden flex flex-col">
+        
+        <!-- Encabezado Principal -->
+        <header class="bg-brand-600 text-white px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl md:text-2xl tracking-wide">PROYECTO NAVEGADOR WEB</h1>
+                    <p class="text-xs text-brand-200">Estructura de Datos: Pilas (LIFO – Last In, First Out)</p>
+                </div>
+            </div>
+            <div class="bg-brand-700/60 px-3 py-1.5 rounded-lg border border-brand-400/30 text-xs font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-university"></i>
+                <span>Anáhuac Mayab</span>
+            </div>
+        </header>
+
+        <!-- Panel de Control y Navegación (Barra Superior) -->
+        <div class="p-6 bg-brand-50 border-b border-brand-100 space-y-4">
+            <!-- Formulario URL y Botón Visitar -->
+            <form id="urlForm" class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-400">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <input type="text" id="urlInput" placeholder="Ejemplo: https://openai.com o google.com" 
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-white text-sm transition-all-custom" 
+                        required>
+                </div>
+                <button type="submit" 
+                    class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm rounded-xl shadow-md hover:shadow-lg transition-all-custom flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-[#ffffff] fa-arrow-right-to-bracket"></i> Visitar
+                </button>
+            </form>
+
+            <!-- Controles de Navegación: Back, Forward, Reset -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div class="flex items-center gap-3">
+                    <button id="btnBack" type="button" 
+                        class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-sm rounded-xl shadow-sm transition-all-custom flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-arrow-left"></i> &larr; Back
+                    </button>
+                    <button id="btnForward" type="button" 
+                        class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-medium text-sm rounded-xl shadow-sm transition-all-custom flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Forward &rarr; <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+                <button id="btnReset" type="button" 
+                    class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-medium text-sm rounded-xl shadow-sm transition-all-custom flex items-center gap-2">
+                    <i class="fa-solid fa-power-off"></i> Reiniciar / Exit
+                </button>
+            </div>
+        </div>
+
+        <!-- Área de Contenido Principal (Visualización de Estado) -->
+        <main class="p-6 space-y-6 flex-1">
+            
+            <!-- Notificación / Mensaje de Estado -->
+            <div id="notificationArea" class="hidden p-4 rounded-xl text-sm font-medium border flex items-center gap-3 transition-all-custom">
+                <i id="notificationIcon" class="text-lg"></i>
+                <span id="notificationText"></span>
+            </div>
+
+            <!-- Tarjeta de Página Actual -->
+            <div class="bg-brand-100/60 border-2 border-brand-200 rounded-2xl p-6 text-center space-y-3 relative overflow-hidden">
+                <div class="text-xs font-semibold tracking-wider text-brand-700 uppercase">PÁGINA ACTUAL</div>
+                <div class="flex flex-col items-center justify-center py-2">
+                    <div id="siteIcon" class="w-16 h-16 rounded-full bg-brand-500 text-white flex items-center justify-center text-3xl mb-3 shadow-md">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <h2 id="currentPageText" class="text-xl md:text-2xl font-bold text-brand-900 break-all max-w-2xl">
+                        Ninguna (Inicio)
+                    </h2>
+                    <p id="currentPageSubtext" class="text-xs text-brand-600 mt-1">Ingresa una URL arriba para comenzar a navegar</p>
+                </div>
+            </div>
+
+            <!-- Visualización de las 2 Pilas (Back Stack vs Forward Stack) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Columna: Pila Atrás (Back Stack) -->
+                <div class="bg-white border-2 border-brand-200 rounded-2xl p-5 flex flex-col h-full shadow-sm">
+                    <div class="flex items-center justify-between mb-4 border-b border-brand-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-[#8b5cf6] fa-clock-rotate-left text-brand-600"></i>
+                            <h3 class="font-bold text-brand-900 text-sm md:text-base">PILA ATRÁS (Back Stack)</h3>
+                        </div>
+                        <span id="backCounter" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-100 text-brand-700">
+                            0 / 5
+                        </span>
+                    </div>
+
+                    <div id="stackFullWarning" class="hidden mb-3 p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-800 text-xs font-semibold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-[#d97706] fa-triangle-exclamation"></i>
+                        <span>X PILA LLENA (Límite máximo de 5 páginas)</span>
+                    </div>
+
+                    <!-- Elementos de la Pila Atrás -->
+                    <div id="backStackList" class="flex-1 space-y-2 flex flex-col justify-end min-h-[160px]">
+                        <p class="text-xs text-slate-400 text-center italic py-6">(Vacío)</p>
+                    </div>
+                </div>
+
+                <!-- Columna: Pila Adelante (Forward Stack) -->
+                <div class="bg-white border-2 border-brand-200 rounded-2xl p-5 flex flex-col h-full shadow-sm">
+                    <div class="flex items-center justify-between mb-4 border-b border-brand-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-[#8b5cf6] fa-share text-brand-600"></i>
+                            <h3 class="font-bold text-brand-900 text-sm md:text-base">PILA ADELANTE (Forward Stack)</h3>
+                        </div>
+                        <span id="forwardCounter" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-100 text-brand-700">
+                            0
+                        </span>
+                    </div>
+
+                    <div id="forwardEmptyWarning" class="hidden mb-3 p-2.5 bg-sky-50 border border-sky-200 rounded-xl text-sky-800 text-xs font-semibold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>X PILA VACÍA (No hay páginas para avanzar)</span>
+                    </div>
+
+                    <!-- Elementos de la Pila Adelante -->
+                    <div id="forwardStackList" class="flex-1 space-y-2 flex flex-col justify-end min-h-[160px]">
+                        <p class="text-xs text-slate-400 text-center italic py-6">(Vacío)</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Pie de página informativo -->
+        <footer class="bg-brand-50 px-6 py-3 border-t border-brand-100 text-center text-xs text-brand-600">
+            Simulador interactivo de navegación basado en la teoría de Pilas en Estructuras de Datos.
+        </footer>
+    </div>
+
+    <!-- Lógica de Aplicación en JavaScript (Idéntica a Python) -->
+    <script>
+        class NavegadorWeb {
+            constructor(capacidadMaxima = 5) {
+                this.paginaActual = "Ninguna (Inicio)";
+                this.backStack = [];
+                this.forwardStack = [];
+                this.capacidadMaxima = capacidadMaxima;
+                this.mensajeNotificacion = null;
+                this.tipoNotificacion = "info"; // 'info', 'success', 'warning', 'error'
+            }
+
+            visitar(url) {
+                if (this.paginaActual && this.paginaActual !== "Ninguna (Inicio)") {
+                    // Si la pila atrás alcanzó su límite, removemos el elemento más antiguo (el fondo / índice 0)
+                    if (this.backStack.length >= this.capacidadMaxima) {
+                        this.backStack.shift();
+                    }
+                    this.backStack.push(this.paginaActual);
+                }
+
+                this.mensajeNotificacion = `[!] Visitando nueva página: ${url}`;
+                this.tipoNotificacion = "success";
+                
+                this.paginaActual = url;
+                // Al visitar una nueva página, la pila adelante se limpia por completo
+                this.forwardStack = [];
+            }
+
+            back() {
+                if (this.backStack.length === 0) {
+                    this.mensajeNotificacion = "[ERROR 404] PILA VACÍA: No hay páginas en la pila atrás para retroceder.";
+                    this.tipoNotificacion = "error";
+                    return false;
+                }
+
+                this.forwardStack.push(this.paginaActual);
+                this.paginaActual = this.backStack.pop();
+                this.mensajeNotificacion = `[<-] Retrocediendo a: ${this.paginaActual}`;
+                this.tipoNotificacion = "info";
+                return true;
+            }
+
+            forward() {
+                if (this.forwardStack.length === 0) {
+                    this.mensajeNotificacion = "[ERROR 404] PILA VACÍA: No hay páginas en la pila adelante para avanzar.";
+                    this.tipoNotificacion = "error";
+                    return false;
+                }
+
+                // Gestionar capacidad máxima antes de insertar en la pila atrás
+                if (this.backStack.length >= this.capacidadMaxima) {
+                    this.backStack.shift();
+                }
+
+                this.backStack.push(this.paginaActual);
+                this.paginaActual = this.forwardStack.pop();
+                this.mensajeNotificacion = `[->] Avanzando a: ${this.paginaActual}`;
+                this.tipoNotificacion = "info";
+                return true;
+            }
+
+            reset() {
+                this.paginaActual = "Ninguna (Inicio)";
+                this.backStack = [];
+                this.forwardStack = [];
+                this.mensajeNotificacion = "Navegador reiniciado al estado inicial.";
+                this.tipoNotificacion = "warning";
+            }
+        }
+
+        // Instancia del Navegador
+        const navegador = new NavegadorWeb(5);
+
+        // Referencias del DOM
+        const urlForm = document.getElementById('urlForm');
+        const urlInput = document.getElementById('urlInput');
+        const btnBack = document.getElementById('btnBack');
+        const btnForward = document.getElementById('btnForward');
+        const btnReset = document.getElementById('btnReset');
+        const currentPageText = document.getElementById('currentPageText');
+        const currentPageSubtext = document.getElementById('currentPageSubtext');
+        const siteIcon = document.getElementById('siteIcon');
+        
+        const backStackList = document.getElementById('backStackList');
+        const forwardStackList = document.getElementById('forwardStackList');
+        const backCounter = document.getElementById('backCounter');
+        const forwardCounter = document.getElementById('forwardCounter');
+        
+        const stackFullWarning = document.getElementById('stackFullWarning');
+        const forwardEmptyWarning = document.getElementById('forwardEmptyWarning');
+        
+        const notificationArea = document.getElementById('notificationArea');
+        const notificationIcon = document.getElementById('notificationIcon');
+        const notificationText = document.getElementById('notificationText');
+
+        // Función para renderizar el estado actual en la UI
+        function actualizarUI() {
+            // 1. Actualizar Página Actual
+            currentPageText.textContent = navegador.paginaActual;
+            if (navegador.paginaActual === "Ninguna (Inicio)") {
+                currentPageSubtext.textContent = "Ingresa una URL arriba para comenzar a navegar";
+                siteIcon.innerHTML = `<i class="fa-solid fa-globe"></i>`;
+            } else {
+                currentPageSubtext.textContent = `Sitio activo actualmente`;
+                // Elegir un icono dinámico básico según la URL
+                if (navegador.paginaActual.includes("google")) siteIcon.innerHTML = `<i class="fa-brands fa-google"></i>`;
+                else if (navegador.paginaActual.includes("openai") || navegador.paginaActual.includes("chat")) siteIcon.innerHTML = `<i class="fa-solid fa-robot"></i>`;
+                else if (navegador.paginaActual.includes("github")) siteIcon.innerHTML = `<i class="fa-brands fa-github"></i>`;
+                else if (navegador.paginaActual.includes("stack")) siteIcon.innerHTML = `<i class="fa-brands fa-stack-overflow"></i>`;
+                else siteIcon.innerHTML = `<i class="fa-solid fa-compass"></i>`;
+            }
+
+            // 2. Actualizar Contadores
+            backCounter.textContent = `${navegador.backStack.length} / ${navegador.capacidadMaxima}`;
+            forwardCounter.textContent = `${navegador.forwardStack.length}`;
+
+            // 3. Renderizar Pila Atrás (Top hacia arriba)
+            if (navegador.backStack.length === 0) {
+                backStackList.innerHTML = `<p class="text-xs text-slate-400 text-center italic py-6">(Vacío)</p>`;
+            } else {
+                let html = "";
+                // Renderizar desde el tope (último elemento ingresado) hacia el fondo
+                for (let i = navegador.backStack.length - 1; i >= 0; i--) {
+                    const isTop = (i === navegador.backStack.length - 1);
+                    html += `
+                        <div class="p-2.5 rounded-xl text-xs font-medium border ${isTop ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm' : 'bg-brand-50/50 border-brand-100 text-slate-700'} flex items-center justify-between transition-all-custom">
+                            <span class="truncate pr-2">[${i + 1}] ${navegador.backStack[i]}</span>
+                            ${isTop ? '<span class="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-bold">TOPE (Pop)</span>' : ''}
+                        </div>
+                    `;
+                }
+                backStackList.innerHTML = html;
+            }
+
+            // 4. Renderizar Pila Adelante (Top hacia arriba)
+            if (navegador.forwardStack.length === 0) {
+                forwardStackList.innerHTML = `<p class="text-xs text-slate-400 text-center italic py-6">(Vacío)</p>`;
+            } else {
+                let html = "";
+                // Renderizar desde el tope (último elemento ingresado) hacia el fondo
+                for (let i = navegador.forwardStack.length - 1; i >= 0; i--) {
+                    const isTop = (i === navegador.forwardStack.length - 1);
+                    html += `
+                        <div class="p-2.5 rounded-xl text-xs font-medium border ${isTop ? 'bg-sky-50 border-sky-300 text-sky-900 shadow-sm' : 'bg-brand-50/50 border-brand-100 text-slate-700'} flex items-center justify-between transition-all-custom">
+                            <span class="truncate pr-2">[${i + 1}] ${navegador.forwardStack[i]}</span>
+                            ${isTop ? '<span class="text-[10px] bg-sky-200 text-sky-800 px-2 py-0.5 rounded-full font-bold">TOPE (Pop)</span>' : ''}
+                        </div>
+                    `;
+                }
+                forwardStackList.innerHTML = html;
+            }
+
+            // 5. Advertencias de Capacidad / Estado
+            if (navegador.backStack.length >= navegador.capacidadMaxima) {
+                stackFullWarning.classList.remove('hidden');
+            } else {
+                stackFullWarning.classList.add('hidden');
+            }
+
+            // 6. Notificaciones Generales
+            if (navegador.mensajeNotificacion) {
+                notificationArea.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-800', 'bg-rose-50', 'border-rose-200', 'text-rose-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800', 'bg-brand-50', 'border-brand-200', 'text-brand-800');
+                
+                notificationText.textContent = navegador.mensajeNotificacion;
+                
+                if (navegador.tipoNotificacion === 'success') {
+                    notificationArea.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+                    notificationIcon.className = 'fa-solid fa-circle-check text-emerald-600 text-lg';
+                } else if (navegador.tipoNotificacion === 'error') {
+                    notificationArea.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+                    notificationIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600 text-lg';
+                } else if (navegador.tipoNotificacion === 'warning') {
+                    notificationArea.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
+                    notificationIcon.className = 'fa-solid fa-circle-exclamation text-amber-600 text-lg';
+                } else {
+                    notificationArea.classList.add('bg-brand-50', 'border-brand-200', 'text-brand-800');
+                    notificationIcon.className = 'fa-solid fa-circle-info text-brand-600 text-lg';
+                }
+            } else {
+                notificationArea.classList.add('hidden');
+            }
+
+            // Deshabilitar botones si no aplican
+            btnBack.disabled = (navegador.backStack.length === 0);
+            btnForward.disabled = (navegador.forwardStack.length === 0);
+        }
+
+        // Manejadores de Eventos
+        urlForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let url = urlInput.value.trim();
+            if (url) {
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                navegador.visitar(url);
+                urlInput.value = '';
+                actualizarUI();
+            }
+        });
+
+        btnBack.addEventListener('click', () => {
+            navegador.back();
+            actualizarUI();
+        });
+
+        btnForward.addEventListener('click', () => {
+            navegador.forward();
+            actualizarUI();
+        });
+
+        btnReset.addEventListener('click', () => {
+            navegador.reset();
+            actualizarUI();
+        });
+
+        // Inicializar la interfaz al cargar la página
+        actualizarUI();
+    </script>
+</body>
+</html>

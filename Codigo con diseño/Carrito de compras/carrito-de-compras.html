@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tienda tech con catálogo, búsqueda y carrito de compras.">
+  <meta name="color-scheme" content="light dark">
+  <title>TiendaTech · Carrito de compras</title>
+  <style>
+/* ==============================================================================
+   styles.css — Estilos de TiendaTech
+   Organización: 1) variables  2) base  3) componentes  4) secciones  5) responsive
+   ============================================================================== */
+
+/* ---------- 1. VARIABLES (colores, radios, sombras) ---------- */
+:root {
+  --bg: #f4f5fb;
+  --surface: #ffffff;
+  --surface-2: #f4f5fb;
+  --text: #1b1d2e;
+  --muted: #6a6f87;
+  --border: #e3e5f0;
+
+  --primary: #5b4bff;
+  --primary-600: #4a3be6;
+  --primary-soft: #ecebff;
+  --ring: rgba(91, 75, 255, 0.35);
+
+  --danger: #e5484d;
+  --danger-600: #cf3a3f;
+  --danger-soft: #fdecec;
+  --success: #12a150;
+  --success-soft: #e3f7ec;
+
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 1px 2px rgba(20, 22, 50, 0.06), 0 10px 30px rgba(20, 22, 50, 0.07);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1020;
+    --surface: #181a2e;
+    --surface-2: #20233b;
+    --text: #eceefb;
+    --muted: #9ba0bd;
+    --border: #2b2e4a;
+    --primary: #7b6dff;
+    --primary-600: #8c80ff;
+    --primary-soft: #26254d;
+    --ring: rgba(123, 109, 255, 0.45);
+    --danger-soft: #3a1f26;
+    --success-soft: #16342a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ---------- 2. BASE ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+.container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 3. COMPONENTES ---------- */
+
+/* Botones */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.65rem 1.15rem; border-radius: var(--radius-sm); border: 1px solid transparent;
+  font-weight: 600; font-size: 0.95rem; cursor: pointer; white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.btn--block { width: 100%; padding: 0.85rem 1.15rem; font-size: 1rem; }
+.btn--primary { background: var(--primary); color: #fff; box-shadow: 0 8px 18px -8px var(--primary); }
+.btn--primary:hover:not(:disabled) { background: var(--primary-600); transform: translateY(-1px); }
+.btn--ghost { background: transparent; border-color: var(--border); color: var(--text); }
+.btn--ghost:hover:not(:disabled) { background: var(--surface-2); }
+.btn--danger { background: var(--danger); color: #fff; }
+.btn--danger:hover:not(:disabled) { background: var(--danger-600); }
+.btn--text-danger { background: transparent; color: var(--danger); padding: 0.4rem 0.7rem; font-size: 0.9rem; }
+.btn--text-danger:hover:not(:disabled) { background: var(--danger-soft); }
+
+.icon-btn {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--muted);
+  cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.icon-btn--danger:hover { background: var(--danger-soft); color: var(--danger); }
+
+.btn:focus-visible, .icon-btn:focus-visible, .stepper__btn:focus-visible, .cart-link:focus-visible, .brand:focus-visible {
+  outline: 3px solid var(--ring); outline-offset: 2px;
+}
+
+/* Selector de cantidad (− 1 +) */
+.stepper {
+  display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); overflow: hidden; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.stepper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+.stepper__btn {
+  width: 34px; height: 38px; border: 0; background: transparent; font-size: 1.1rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease;
+}
+.stepper__btn:hover:not(:disabled) { background: var(--primary-soft); color: var(--primary); }
+.stepper__btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.stepper input {
+  width: 3.2rem; height: 38px; border: 0; background: transparent; text-align: center; font-weight: 600;
+  outline: none; -moz-appearance: textfield; appearance: textfield;
+}
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.chip {
+  display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+  background: var(--primary-soft); color: var(--primary);
+}
+
+/* ---------- 4. SECCIONES ---------- */
+
+/* Barra superior */
+.topbar {
+  position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+}
+.topbar__inner {
+  max-width: 1200px; margin: 0 auto; padding: 0.8rem 1.25rem; display: flex; align-items: center; justify-content: space-between;
+}
+.brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text); font-size: 1.15rem; }
+.brand strong { color: var(--primary); }
+.brand__logo {
+  display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: #fff;
+  background: linear-gradient(135deg, var(--primary), #8f5bff);
+}
+.cart-link {
+  position: relative; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.9rem;
+  border-radius: 999px; border: 1px solid var(--border); text-decoration: none; color: var(--text); font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+.cart-link:hover { background: var(--surface-2); }
+.badge {
+  display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 0.4rem; border-radius: 999px;
+  background: var(--primary); color: #fff; font-size: 0.8rem; font-weight: 700;
+}
+.badge.pulse { animation: pulse 0.45s ease; }
+@keyframes pulse { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+/* Hero + búsqueda */
+.hero {
+  padding: 2.8rem 0 1.6rem;
+  background: radial-gradient(900px 300px at 15% -20%, var(--primary-soft), transparent 70%);
+}
+.hero__title { font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.15; letter-spacing: -0.02em; }
+.hero__text { margin-top: 0.6rem; color: var(--muted); max-width: 52ch; }
+.search {
+  position: relative; display: flex; align-items: center; gap: 0.6rem; margin-top: 1.4rem; max-width: 640px;
+  padding: 0.45rem 0.45rem 0.45rem 2.9rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: var(--shadow); transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.search:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px var(--ring); }
+.search__icon { position: absolute; left: 1rem; color: var(--muted); }
+.search__input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; padding: 0.55rem 0; }
+.search-slot { margin-top: 1rem; max-width: 640px; }
+.search-result {
+  padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  animation: aparecer 0.25s ease;
+}
+.search-result__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); }
+.search-error {
+  padding: 0.8rem 1rem; border-radius: var(--radius-sm); background: var(--danger-soft); color: var(--danger);
+  font-weight: 500; animation: aparecer 0.25s ease;
+}
+
+/* Disposición principal */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 1.75rem; padding-top: 1.25rem; padding-bottom: 3rem; align-items: start; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; }
+.section-head h2, .cart__head h2 { font-size: 1.25rem; letter-spacing: -0.01em; }
+
+/* Catálogo */
+.catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; }
+.product {
+  display: flex; flex-direction: column; gap: 0.35rem; padding: 1.1rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.product:hover { transform: translateY(-3px); border-color: var(--primary); }
+.product__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+.product__icon {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; font-size: 1.6rem;
+  background: var(--primary-soft);
+}
+.product__name { font-size: 1.1rem; }
+.product__id { font-size: 0.8rem; color: var(--muted); }
+.product__price { font-size: 1.35rem; font-weight: 700; margin: 0.3rem 0 0.6rem; letter-spacing: -0.01em; }
+.product__actions { display: flex; align-items: center; gap: 0.5rem; margin-top: auto; flex-wrap: wrap; }
+.product__actions .btn { flex: 1; min-width: 90px; }
+
+/* Resultado de búsqueda: tarjeta más compacta, sin hover elevado */
+.search-result .product { box-shadow: none; background: var(--surface-2); }
+.search-result .product:hover { transform: none; }
+
+/* Carrito */
+.cart {
+  position: sticky; top: 88px; display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem;
+  max-height: calc(100vh - 108px); background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.cart__head { display: flex; align-items: center; justify-content: space-between; }
+.cart__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; overflow-y: auto; min-height: 0; }
+.cart-item {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "icono info borrar" "cantidad cantidad subtotal";
+  align-items: center; gap: 0.6rem 0.8rem; padding: 0.85rem; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 14px; animation: aparecer 0.25s ease;
+}
+.cart-item__icon { grid-area: icono; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; font-size: 1.3rem; background: var(--primary-soft); }
+.cart-item__info { grid-area: info; min-width: 0; }
+.cart-item__name { font-weight: 600; }
+.cart-item__meta { font-size: 0.8rem; color: var(--muted); }
+.cart-item > .icon-btn { grid-area: borrar; }
+.cart-item .stepper { grid-area: cantidad; justify-self: start; }
+.cart-item__subtotal { grid-area: subtotal; font-weight: 700; justify-self: end; }
+
+.empty { display: grid; justify-items: center; text-align: center; gap: 0.3rem; padding: 1.5rem 0.5rem; color: var(--muted); }
+.empty svg { color: var(--primary); opacity: 0.7; margin-bottom: 0.4rem; }
+.empty__title { font-weight: 600; color: var(--text); }
+.empty__text { font-size: 0.9rem; }
+
+.summary { margin: 0; padding-top: 1rem; border-top: 1px dashed var(--border); display: grid; gap: 0.5rem; }
+.summary__row { display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--muted); }
+.summary__row dd { margin: 0; font-weight: 600; color: var(--text); }
+.summary__row--total { margin-top: 0.3rem; font-size: 1.15rem; color: var(--text); }
+.summary__row--total dd { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+
+.footer { padding: 1.5rem; text-align: center; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); }
+
+/* Ventana modal */
+.modal {
+  width: min(480px, calc(100vw - 2rem)); padding: 0; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); box-shadow: 0 30px 80px rgba(10, 10, 30, 0.45);
+}
+.modal[open] { animation: aparecer 0.22s ease; }
+.modal::backdrop { background: rgba(12, 13, 32, 0.55); backdrop-filter: blur(4px); }
+.modal__content { padding: 1.5rem; display: grid; gap: 1rem; }
+.modal__title { font-size: 1.25rem; letter-spacing: -0.01em; }
+.modal__body { display: grid; gap: 0.8rem; color: var(--muted); }
+.modal__body strong { color: var(--text); }
+.modal__actions { display: flex; justify-content: flex-end; gap: 0.6rem; flex-wrap: wrap; }
+.modal__total { display: flex; justify-content: space-between; font-weight: 700; color: var(--text); padding-top: 0.6rem; border-top: 1px dashed var(--border); }
+.mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; color: var(--text); }
+.mini-list li { display: flex; justify-content: space-between; gap: 1rem; }
+.receipt { width: 100%; border-collapse: collapse; color: var(--text); font-size: 0.92rem; }
+.receipt th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+.receipt td { padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+.receipt th:last-child, .receipt td:last-child { text-align: right; }
+.receipt th:nth-child(2), .receipt td:nth-child(2) { text-align: center; }
+.thanks { text-align: center; font-weight: 600; color: var(--success); background: var(--success-soft); padding: 0.6rem; border-radius: var(--radius-sm); }
+
+/* Avisos temporales */
+.toasts { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 50; display: grid; gap: 0.6rem; width: min(360px, calc(100vw - 2.5rem)); }
+.toast {
+  display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.8rem 1rem; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-left-width: 4px; border-radius: var(--radius-sm); box-shadow: var(--shadow);
+  animation: entrar 0.25s ease;
+}
+.toast--salida { animation: salir 0.25s ease forwards; }
+.toast--ok { border-left-color: var(--success); }
+.toast--error { border-left-color: var(--danger); }
+.toast--info { border-left-color: var(--primary); }
+.toast__icono { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.8rem; font-weight: 700; color: #fff; }
+.toast--ok .toast__icono { background: var(--success); }
+.toast--error .toast__icono { background: var(--danger); }
+.toast--info .toast__icono { background: var(--primary); }
+
+@keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes entrar { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+@keyframes salir { to { opacity: 0; transform: translateX(20px); } }
+
+/* ---------- 5. RESPONSIVE ---------- */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .cart { position: static; max-height: none; }
+}
+@media (max-width: 560px) {
+  .cart-link__label { display: none; }
+  .hero { padding-top: 2rem; }
+  .search { padding-left: 2.6rem; }
+  .search .btn { padding: 0.6rem 0.9rem; }
+  .toasts { right: 1rem; left: 1rem; width: auto; }
+  .modal__actions .btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+  </style>
+</head>
+<body id="inicio">
+
+  <!-- ===================== BARRA SUPERIOR ===================== -->
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="#inicio" aria-label="TiendaTech, ir al inicio">
+        <span class="brand__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 8H6.2"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
+        </span>
+        <span class="brand__name">Tienda<strong>Tech</strong></span>
+      </a>
+
+      <a class="cart-link" href="#carrito" aria-label="Ir al carrito de compras">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 8H6.2"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
+        <span class="cart-link__label">Carrito</span>
+        <span class="badge" id="contadorCarrito" aria-live="polite">0</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ===================== BÚSQUEDA ===================== -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero__title">Arma tu pedido en minutos</h1>
+      <p class="hero__text">Explora el catálogo, busca por ID o nombre y administra tu carrito sin complicaciones.</p>
+
+      <form id="formBusqueda" class="search" role="search" novalidate>
+        <label for="campoBusqueda" class="sr-only">Buscar producto por ID o nombre</label>
+        <svg class="search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="campoBusqueda" class="search__input" type="text" placeholder="Buscar por ID o nombre (ej. 3 o Monitor)" autocomplete="off">
+        <button class="btn btn--primary" type="submit">Buscar</button>
+      </form>
+
+      <div id="resultadoBusqueda" class="search-slot" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ===================== CONTENIDO PRINCIPAL ===================== -->
+  <main class="container layout">
+
+    <!-- Catálogo -->
+    <section aria-labelledby="tituloCatalogo">
+      <div class="section-head">
+        <h2 id="tituloCatalogo">Catálogo de productos</h2>
+        <span class="muted" id="totalProductos"></span>
+      </div>
+      <div id="catalogo" class="catalog"></div>
+    </section>
+
+    <!-- Carrito -->
+    <aside id="carrito" class="cart" aria-labelledby="tituloCarrito">
+      <div class="cart__head">
+        <h2 id="tituloCarrito">Tu carrito</h2>
+        <button id="btnVaciar" class="btn btn--text-danger" type="button">Vaciar</button>
+      </div>
+
+      <div id="carritoVacio" class="empty">
+        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10h6l6 28a5 5 0 0 0 5 4h20a5 5 0 0 0 5-3.6L52 20H15"/><circle cx="26" cy="52" r="3"/><circle cx="46" cy="52" r="3"/></svg>
+        <p class="empty__title">El carrito está vacío</p>
+        <p class="empty__text">Agrega productos desde el catálogo para verlos aquí.</p>
+      </div>
+
+      <ul id="listaCarrito" class="cart__list" aria-label="Productos en el carrito"></ul>
+
+      <dl class="summary">
+        <div class="summary__row"><dt>Productos distintos</dt><dd id="resumenProductos">0</dd></div>
+        <div class="summary__row"><dt>Total de artículos</dt><dd id="resumenArticulos">0</dd></div>
+        <div class="summary__row summary__row--total"><dt>Total a pagar</dt><dd id="resumenTotal">$0.00</dd></div>
+      </dl>
+
+      <button id="btnFinalizar" class="btn btn--primary btn--block" type="button">Finalizar compra</button>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <p>TiendaTech · Proyecto de Estructuras de Datos y Algoritmos</p>
+  </footer>
+
+  <!-- ===================== VENTANA MODAL (confirmaciones y recibo) ===================== -->
+  <dialog id="dialogo" class="modal" aria-labelledby="dialogoTitulo">
+    <div class="modal__content">
+      <h2 id="dialogoTitulo" class="modal__title"></h2>
+      <div id="dialogoCuerpo" class="modal__body"></div>
+      <div id="dialogoAcciones" class="modal__actions"></div>
+    </div>
+  </dialog>
+
+  <!-- Avisos temporales (toasts) -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script>
+/* ==============================================================================
+   carrito.js — LÓGICA DEL NEGOCIO (no toca el DOM)
+
+   Es la traducción directa de las clases del programa en Python:
+     Producto, ElementoCarrito y CarritoDeCompras.
+
+   Diferencia clave respecto a la versión de consola: aquí NO hay print() ni
+   input(). Cada método devuelve un objeto { ok, mensaje, ... } y la interfaz
+   (app.js) decide cómo mostrarlo. Así la lógica se puede probar sola.
+   ============================================================================== */
+"use strict";
+
+// Límite de seguridad por producto (en Python no existía; evita cantidades absurdas).
+const CANTIDAD_MAXIMA = 999;
+
+// Helpers para construir respuestas uniformes.
+const exito = (mensaje, datos = {}) => ({ ok: true, mensaje, ...datos });
+const fallo = (mensaje) => ({ ok: false, mensaje });
+
+/** Quita acentos y mayúsculas: "Audífonos" -> "audifonos". */
+function normalizarTexto(texto) {
+  return String(texto)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Validación única de cantidades (se usa en TODOS los puntos de entrada).
+ * Devuelve { ok: true, cantidad } o { ok: false, mensaje }.
+ */
+function validarCantidad(valor) {
+  const texto = String(valor ?? "").trim();
+  if (texto === "") return fallo("Ingrese una cantidad.");
+
+  const numero = Number(texto);
+  if (!Number.isInteger(numero)) return fallo("La cantidad debe ser un número entero.");
+  if (numero <= 0) return fallo("La cantidad debe ser mayor a 0.");
+  if (numero > CANTIDAD_MAXIMA) return fallo(`La cantidad máxima por producto es ${CANTIDAD_MAXIMA}.`);
+
+  return exito("", { cantidad: numero });
+}
+
+/** Un producto del catálogo. */
+class Producto {
+  constructor(id, nombre, categoria, precio, icono = "📦") {
+    this.id = id;
+    this.nombre = nombre;
+    this.categoria = categoria;
+    this.precio = Number(precio);
+    this.icono = icono; // emoji decorativo para la interfaz
+  }
+}
+
+/** Un renglón del carrito: un producto + una cantidad. */
+class ElementoCarrito {
+  constructor(producto, cantidad) {
+    this.producto = producto;
+    this.cantidad = 0;
+    this.setCantidad(cantidad); // reutiliza la validación
+  }
+
+  /** Cambia la cantidad; lanza error si es inválida (la integridad vive AQUÍ). */
+  setCantidad(nuevaCantidad) {
+    const validacion = validarCantidad(nuevaCantidad);
+    if (!validacion.ok) throw new RangeError(validacion.mensaje);
+    this.cantidad = validacion.cantidad;
+  }
+
+  /** Subtotal calculado en centavos enteros para evitar errores de punto flotante. */
+  calcularSubtotal() {
+    return (Math.round(this.producto.precio * 100) * this.cantidad) / 100;
+  }
+}
+
+/** Administra el catálogo y las operaciones del carrito. */
+class CarritoDeCompras {
+  constructor() {
+    this.catalogo = [];
+    this.itemsCarrito = [];
+    this.cargarCatalogoInicial();
+  }
+
+  cargarCatalogoInicial() {
+    this.catalogo.push(new Producto(1, "Teclado", "Accesorios", 450.0, "⌨️"));
+    this.catalogo.push(new Producto(2, "Mouse", "Accesorios", 250.0, "🖱️"));
+    this.catalogo.push(new Producto(3, "Monitor", "Electrónica", 3200.0, "🖥️"));
+    this.catalogo.push(new Producto(4, "Audifonos", "Audio", 800.0, "🎧"));
+    this.catalogo.push(new Producto(5, "Memoria USB", "Almacenamiento", 180.0, "💾"));
+  }
+
+  /** Búsqueda secuencial por ID exacto o nombre exacto (sin importar mayúsculas ni acentos). */
+  buscarProducto(criterio) {
+    const criterioBusqueda = normalizarTexto(criterio);
+    if (criterioBusqueda === "") return null;
+    for (const producto of this.catalogo) {
+      if (String(producto.id) === criterioBusqueda || normalizarTexto(producto.nombre) === criterioBusqueda) {
+        return producto;
+      }
+    }
+    return null;
+  }
+
+  /** Devuelve el renglón del carrito para un ID de producto, o undefined. */
+  buscarItemEnCarrito(idProducto) {
+    const id = Number(idProducto);
+    return this.itemsCarrito.find((item) => item.producto.id === id);
+  }
+
+  agregarProducto(idONombre, cantidad) {
+    const validacion = validarCantidad(cantidad);
+    if (!validacion.ok) return validacion;
+
+    const producto = this.buscarProducto(idONombre);
+    if (!producto) return fallo("Producto no encontrado en el catálogo.");
+
+    // Si ya está en el carrito, solo se acumula la cantidad.
+    const itemExistente = this.buscarItemEnCarrito(producto.id);
+    if (itemExistente) {
+      const total = itemExistente.cantidad + validacion.cantidad;
+      if (total > CANTIDAD_MAXIMA) {
+        return fallo(`Solo puede tener hasta ${CANTIDAD_MAXIMA} unidades de ${producto.nombre} (ya tiene ${itemExistente.cantidad}).`);
+      }
+      itemExistente.setCantidad(total);
+      return exito(`${producto.nombre} actualizado. Cantidad total: ${total}.`, { producto, cantidadTotal: total, nuevo: false });
+    }
+
+    this.itemsCarrito.push(new ElementoCarrito(producto, validacion.cantidad));
+    return exito(`${producto.nombre} agregado al carrito.`, { producto, cantidadTotal: validacion.cantidad, nuevo: true });
+  }
+
+  modificarCantidad(idProducto, nuevaCantidad) {
+    const validacion = validarCantidad(nuevaCantidad);
+    if (!validacion.ok) return validacion;
+
+    const item = this.buscarItemEnCarrito(idProducto);
+    if (!item) return fallo("El producto no está en el carrito.");
+
+    const cantidadAnterior = item.cantidad;
+    item.setCantidad(validacion.cantidad);
+    return exito("¡Cantidad actualizada!", { cantidadAnterior, cantidadNueva: item.cantidad });
+  }
+
+  /** Elimina un producto. La confirmación se pide en la interfaz, no aquí. */
+  eliminarProducto(idProducto) {
+    const id = Number(idProducto);
+    const posicion = this.itemsCarrito.findIndex((item) => item.producto.id === id);
+    if (posicion === -1) return fallo("El producto no está en el carrito.");
+
+    const [eliminado] = this.itemsCarrito.splice(posicion, 1);
+    return exito(`${eliminado.producto.nombre} eliminado del carrito.`);
+  }
+
+  vaciarCarrito() {
+    if (this.itemsCarrito.length === 0) return fallo("El carrito ya está vacío.");
+    this.itemsCarrito.length = 0;
+    return exito("¡Carrito vaciado!");
+  }
+
+  /** Suma de subtotales (en centavos enteros). */
+  calcularTotal() {
+    const centavos = this.itemsCarrito.reduce((acumulado, item) => acumulado + Math.round(item.calcularSubtotal() * 100), 0);
+    return centavos / 100;
+  }
+
+  calcularTotalArticulos() {
+    return this.itemsCarrito.reduce((acumulado, item) => acumulado + item.cantidad, 0);
+  }
+
+  /**
+   * Genera el resumen de compra y LIMPIA el carrito (en Python esto lo hacía main()
+   * metiéndose a tienda.itemsCarrito desde fuera; ahora lo hace la propia clase).
+   */
+  finalizarCompra() {
+    if (this.itemsCarrito.length === 0) return fallo("No hay artículos en el carrito para comprar.");
+
+    const resumen = {
+      lineas: this.itemsCarrito.map((item) => ({
+        id: item.producto.id,
+        nombre: item.producto.nombre,
+        cantidad: item.cantidad,
+        subtotal: item.calcularSubtotal(),
+      })),
+      productosDistintos: this.itemsCarrito.length,
+      totalArticulos: this.calcularTotalArticulos(),
+      total: this.calcularTotal(),
+    };
+
+    this.itemsCarrito.length = 0;
+    return exito("¡Gracias por su compra!", { resumen });
+  }
+}
+
+// Permite probar este archivo con Node.js sin afectar al navegador.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { CarritoDeCompras, Producto, ElementoCarrito, validarCantidad, CANTIDAD_MAXIMA };
+}
+
+  </script>
+  <script>
+/* ==============================================================================
+   app.js — INTERFAZ (conecta la lógica de carrito.js con la página)
+
+   Equivalencia con el menú de consola de Python:
+     1. Mostrar catálogo      -> renderCatalogo()
+     2. Buscar producto       -> formulario de búsqueda
+     3. Agregar al carrito    -> botón "Agregar" de cada tarjeta
+     4. Ver carrito           -> panel "Tu carrito" (siempre visible)
+     5. Modificar cantidad    -> selector − / + o escribir en el campo del carrito
+     6. Eliminar producto     -> botón de papelera + confirmación
+     7. Vaciar carrito        -> botón "Vaciar" + confirmación
+     8. Finalizar compra      -> botón "Finalizar compra" + recibo
+     9. Salir                 -> no aplica en una página web (se cierra la pestaña)
+   ============================================================================== */
+"use strict";
+
+const tienda = new CarritoDeCompras();
+
+const formatoMoneda = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+const formatearPrecio = (valor) => formatoMoneda.format(valor);
+
+/* ---------- Referencias al DOM ---------- */
+const $ = (id) => document.getElementById(id);
+const ref = {
+  catalogo: $("catalogo"),
+  totalProductos: $("totalProductos"),
+  formBusqueda: $("formBusqueda"),
+  campoBusqueda: $("campoBusqueda"),
+  resultadoBusqueda: $("resultadoBusqueda"),
+  listaCarrito: $("listaCarrito"),
+  carritoVacio: $("carritoVacio"),
+  btnVaciar: $("btnVaciar"),
+  btnFinalizar: $("btnFinalizar"),
+  contadorCarrito: $("contadorCarrito"),
+  resumenProductos: $("resumenProductos"),
+  resumenArticulos: $("resumenArticulos"),
+  resumenTotal: $("resumenTotal"),
+  toasts: $("toasts"),
+  dialogo: $("dialogo"),
+  dialogoTitulo: $("dialogoTitulo"),
+  dialogoCuerpo: $("dialogoCuerpo"),
+  dialogoAcciones: $("dialogoAcciones"),
+};
+
+/* ---------- Utilidades de interfaz ---------- */
+
+/**
+ * Crea elementos de forma segura (usa textContent, nunca innerHTML con datos).
+ * props: clase, texto, dataset, y cualquier otro atributo HTML.
+ */
+function el(etiqueta, props = {}, ...hijos) {
+  const nodo = document.createElement(etiqueta);
+  const { clase, texto, dataset, ...atributos } = props;
+  if (clase) nodo.className = clase;
+  if (texto !== undefined) nodo.textContent = texto;
+  if (dataset) Object.assign(nodo.dataset, dataset);
+  for (const [nombre, valor] of Object.entries(atributos)) nodo.setAttribute(nombre, valor);
+  nodo.append(...hijos);
+  return nodo;
+}
+
+const ICONO_PAPELERA =
+  '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>';
+
+/** Aviso temporal en la esquina. tipo: "ok" | "error" | "info". */
+function mostrarToast(mensaje, tipo = "info") {
+  const simbolo = { ok: "✓", error: "!", info: "i" }[tipo];
+  const toast = el(
+    "div",
+    { clase: `toast toast--${tipo}`, role: tipo === "error" ? "alert" : "status" },
+    el("span", { clase: "toast__icono", "aria-hidden": "true", texto: simbolo }),
+    el("span", { texto: mensaje })
+  );
+  if (ref.toasts.children.length >= 4) ref.toasts.firstElementChild.remove();
+  ref.toasts.append(toast);
+
+  setTimeout(() => {
+    toast.classList.add("toast--salida");
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+/** Ventana modal reutilizable. Devuelve una promesa con el "valor" del botón elegido (null si se cierra). */
+function mostrarDialogo({ titulo, cuerpo, acciones }) {
+  return new Promise((resolver) => {
+    ref.dialogoTitulo.textContent = titulo;
+    ref.dialogoCuerpo.replaceChildren(cuerpo);
+    ref.dialogoAcciones.replaceChildren();
+
+    let resultado = null;
+    for (const accion of acciones) {
+      const boton = el("button", { type: "button", clase: `btn ${accion.clase}`, texto: accion.texto });
+      boton.addEventListener("click", () => {
+        resultado = accion.valor;
+        ref.dialogo.close();
+      });
+      ref.dialogoAcciones.append(boton);
+    }
+
+    ref.dialogo.addEventListener("close", () => resolver(resultado), { once: true });
+    ref.dialogo.showModal();
+  });
+}
+
+// Cerrar la ventana al hacer clic en el fondo oscuro.
+ref.dialogo.addEventListener("click", (evento) => {
+  if (evento.target === ref.dialogo) ref.dialogo.close();
+});
+
+/** Selector de cantidad  [ − | 1 | + ]. */
+function crearStepper(valor, nombreProducto) {
+  const menos = el("button", { type: "button", clase: "stepper__btn", "data-paso": "-1", "aria-label": `Disminuir cantidad de ${nombreProducto}`, texto: "−" });
+  const mas = el("button", { type: "button", clase: "stepper__btn", "data-paso": "1", "aria-label": `Aumentar cantidad de ${nombreProducto}`, texto: "+" });
+  const campo = el("input", {
+    type: "number", min: "1", max: String(CANTIDAD_MAXIMA), step: "1", inputmode: "numeric",
+    value: String(valor), "aria-label": `Cantidad de ${nombreProducto}`,
+  });
+  return el("div", { clase: "stepper" }, menos, campo, mas);
+}
+
+function animarContador() {
+  ref.contadorCarrito.classList.remove("pulse");
+  void ref.contadorCarrito.offsetWidth; // reinicia la animación
+  ref.contadorCarrito.classList.add("pulse");
+}
+
+/* ==============================================================================
+   CATÁLOGO (opción 1) y AGREGAR (opción 3)
+   ============================================================================== */
+
+function crearTarjetaProducto(producto) {
+  return el(
+    "article",
+    { clase: "product", dataset: { id: producto.id } },
+    el("div", { clase: "product__top" },
+      el("span", { clase: "product__icon", "aria-hidden": "true", texto: producto.icono }),
+      el("span", { clase: "chip", texto: producto.categoria })
+    ),
+    el("h3", { clase: "product__name", texto: producto.nombre }),
+    el("p", { clase: "product__id", texto: `ID ${producto.id}` }),
+    el("p", { clase: "product__price", texto: formatearPrecio(producto.precio) }),
+    el("div", { clase: "product__actions" },
+      crearStepper(1, producto.nombre),
+      el("button", { type: "button", clase: "btn btn--primary", "data-accion": "agregar", texto: "Agregar" })
+    )
+  );
+}
+
+function renderCatalogo() {
+  ref.catalogo.replaceChildren(...tienda.catalogo.map(crearTarjetaProducto));
+  ref.totalProductos.textContent = `${tienda.catalogo.length} productos`;
+}
+
+/** Ajusta el campo de cantidad de una tarjeta (sin tocar el carrito todavía). */
+function ajustarCantidadLocal(campo, paso) {
+  const actual = Number(campo.value);
+  const base = Number.isInteger(actual) && actual >= 1 ? actual : 1;
+  campo.value = String(Math.min(CANTIDAD_MAXIMA, Math.max(1, base + paso)));
+}
+
+/** Manejador compartido por el catálogo y el resultado de búsqueda. */
+function manejarClicProducto(evento) {
+  const tarjeta = evento.target.closest(".product");
+  if (!tarjeta) return;
+  const campo = tarjeta.querySelector("input");
+
+  const botonPaso = evento.target.closest("[data-paso]");
+  if (botonPaso) {
+    ajustarCantidadLocal(campo, Number(botonPaso.dataset.paso));
+    return;
+  }
+
+  if (evento.target.closest("[data-accion='agregar']")) {
+    const resultado = tienda.agregarProducto(tarjeta.dataset.id, campo.value);
+    mostrarToast(resultado.mensaje, resultado.ok ? "ok" : "error");
+    if (resultado.ok) {
+      campo.value = "1";
+      renderCarrito();
+      animarContador();
+    } else {
+      campo.focus();
+    }
+  }
+}
+
+ref.catalogo.addEventListener("click", manejarClicProducto);
+ref.resultadoBusqueda.addEventListener("click", (evento) => {
+  if (evento.target.closest("[data-accion='cerrar-busqueda']")) {
+    mostrarResultadoBusqueda(null, "");
+    return;
+  }
+  manejarClicProducto(evento);
+});
+
+/* ==============================================================================
+   BÚSQUEDA (opción 2)
+   ============================================================================== */
+
+function mostrarResultadoBusqueda(producto, mensajeError) {
+  ref.resultadoBusqueda.replaceChildren();
+
+  if (producto) {
+    ref.resultadoBusqueda.append(
+      el("div", { clase: "search-result" },
+        el("div", { clase: "search-result__head" },
+          el("span", { clase: "eyebrow", texto: "Resultado de la búsqueda" }),
+          el("button", { type: "button", clase: "icon-btn", "data-accion": "cerrar-busqueda", "aria-label": "Cerrar resultado", texto: "✕" })
+        ),
+        crearTarjetaProducto(producto)
+      )
+    );
+  } else if (mensajeError) {
+    ref.resultadoBusqueda.append(el("p", { clase: "search-error", role: "alert", texto: mensajeError }));
+  }
+}
+
+ref.formBusqueda.addEventListener("submit", (evento) => {
+  evento.preventDefault();
+  const termino = ref.campoBusqueda.value.trim();
+
+  if (termino === "") {
+    mostrarResultadoBusqueda(null, "Escriba un ID o un nombre para buscar.");
+    return;
+  }
+
+  const producto = tienda.buscarProducto(termino);
+  if (producto) {
+    mostrarResultadoBusqueda(producto, "");
+  } else {
+    mostrarResultadoBusqueda(null, `Producto no encontrado: "${termino}". Pruebe con un ID del 1 al ${tienda.catalogo.length} o con el nombre exacto.`);
+  }
+});
+
+/* ==============================================================================
+   CARRITO (opción 4), MODIFICAR (5), ELIMINAR (6)
+   ============================================================================== */
+
+function crearFilaCarrito(item) {
+  const { producto } = item;
+  const botonEliminar = el("button", { type: "button", clase: "icon-btn icon-btn--danger", "data-accion": "eliminar", "aria-label": `Eliminar ${producto.nombre} del carrito` });
+  botonEliminar.innerHTML = ICONO_PAPELERA; // SVG fijo y de confianza (no contiene datos del usuario)
+
+  return el(
+    "li",
+    { clase: "cart-item", dataset: { id: producto.id } },
+    el("span", { clase: "cart-item__icon", "aria-hidden": "true", texto: producto.icono }),
+    el("div", { clase: "cart-item__info" },
+      el("p", { clase: "cart-item__name", texto: producto.nombre }),
+      el("p", { clase: "cart-item__meta", texto: `ID ${producto.id} · ${formatearPrecio(producto.precio)} c/u` })
+    ),
+    botonEliminar,
+    crearStepper(item.cantidad, producto.nombre),
+    el("p", { clase: "cart-item__subtotal", texto: formatearPrecio(item.calcularSubtotal()) })
+  );
+}
+
+/** Reconstruye la lista completa (al agregar, eliminar o vaciar). */
+function renderCarrito() {
+  const items = tienda.itemsCarrito;
+  const estaVacio = items.length === 0;
+
+  ref.listaCarrito.replaceChildren(...items.map(crearFilaCarrito));
+  ref.carritoVacio.hidden = !estaVacio;
+  ref.listaCarrito.hidden = estaVacio;
+  ref.btnVaciar.disabled = estaVacio;
+  ref.btnFinalizar.disabled = estaVacio;
+
+  actualizarMontos();
+}
+
+/**
+ * Actualiza cantidades, subtotales y totales SIN reconstruir las filas.
+ * (Así no se pierde el foco ni se "comen" clics al editar una cantidad.)
+ */
+function actualizarMontos() {
+  for (const item of tienda.itemsCarrito) {
+    const fila = ref.listaCarrito.querySelector(`.cart-item[data-id="${item.producto.id}"]`);
+    if (!fila) continue;
+    fila.querySelector("input").value = String(item.cantidad);
+    fila.querySelector("[data-paso='-1']").disabled = item.cantidad <= 1;
+    fila.querySelector("[data-paso='1']").disabled = item.cantidad >= CANTIDAD_MAXIMA;
+    fila.querySelector(".cart-item__subtotal").textContent = formatearPrecio(item.calcularSubtotal());
+  }
+
+  ref.resumenProductos.textContent = String(tienda.itemsCarrito.length);
+  ref.resumenArticulos.textContent = String(tienda.calcularTotalArticulos());
+  ref.resumenTotal.textContent = formatearPrecio(tienda.calcularTotal());
+  ref.contadorCarrito.textContent = String(tienda.calcularTotalArticulos());
+}
+
+/** Aplica una nueva cantidad exacta a un renglón (opción 5 del menú original). */
+function aplicarCantidad(idProducto, valor, avisar) {
+  const resultado = tienda.modificarCantidad(idProducto, valor);
+  if (!resultado.ok) {
+    mostrarToast(resultado.mensaje, "error");
+  } else if (avisar) {
+    mostrarToast(resultado.mensaje, "ok");
+  }
+  actualizarMontos(); // si hubo error, esto restaura el valor válido en el campo
+}
+
+ref.listaCarrito.addEventListener("click", (evento) => {
+  const fila = evento.target.closest(".cart-item");
+  if (!fila) return;
+  const id = Number(fila.dataset.id);
+
+  const botonPaso = evento.target.closest("[data-paso]");
+  if (botonPaso) {
+    const item = tienda.buscarItemEnCarrito(id);
+    aplicarCantidad(id, item.cantidad + Number(botonPaso.dataset.paso), false);
+    return;
+  }
+
+  if (evento.target.closest("[data-accion='eliminar']")) confirmarEliminar(id);
+});
+
+// Cuando el usuario escribe una cantidad y presiona Enter o sale del campo.
+ref.listaCarrito.addEventListener("change", (evento) => {
+  if (!evento.target.matches("input")) return;
+  const fila = evento.target.closest(".cart-item");
+  aplicarCantidad(Number(fila.dataset.id), evento.target.value, true);
+});
+
+async function confirmarEliminar(idProducto) {
+  const item = tienda.buscarItemEnCarrito(idProducto);
+  if (!item) return;
+
+  const confirmado = await mostrarDialogo({
+    titulo: "Eliminar producto",
+    cuerpo: el("p", {}, "¿Está seguro que desea eliminar ", el("strong", { texto: item.producto.nombre }), " del carrito?"),
+    acciones: [
+      { texto: "Cancelar", clase: "btn--ghost", valor: false },
+      { texto: "Eliminar", clase: "btn--danger", valor: true },
+    ],
+  });
+
+  if (confirmado) {
+    const resultado = tienda.eliminarProducto(idProducto);
+    mostrarToast(resultado.mensaje, resultado.ok ? "ok" : "error");
+    renderCarrito();
+  } else {
+    mostrarToast("Operación cancelada.", "info");
+  }
+}
+
+/* ==============================================================================
+   VACIAR (opción 7) y FINALIZAR COMPRA (opción 8)
+   ============================================================================== */
+
+ref.btnVaciar.addEventListener("click", async () => {
+  if (tienda.itemsCarrito.length === 0) {
+    mostrarToast("El carrito ya está vacío.", "info");
+    return;
+  }
+
+  const lista = el("ul", { clase: "mini-list" },
+    ...tienda.itemsCarrito.map((item) =>
+      el("li", {}, el("span", { texto: `${item.cantidad} × ${item.producto.nombre}` }), el("span", { texto: formatearPrecio(item.calcularSubtotal()) }))
+    )
+  );
+  const cuerpo = el("div", {},
+    el("p", { texto: "Se quitarán todos estos productos del carrito:" }),
+    lista,
+    el("p", { clase: "modal__total" }, el("span", { texto: "Total" }), el("span", { texto: formatearPrecio(tienda.calcularTotal()) }))
+  );
+  cuerpo.style.display = "grid";
+  cuerpo.style.gap = "0.8rem";
+
+  const confirmado = await mostrarDialogo({
+    titulo: "Vaciar carrito",
+    cuerpo,
+    acciones: [
+      { texto: "Cancelar", clase: "btn--ghost", valor: false },
+      { texto: "Vaciar carrito", clase: "btn--danger", valor: true },
+    ],
+  });
+
+  if (confirmado) {
+    const resultado = tienda.vaciarCarrito();
+    mostrarToast(resultado.mensaje, resultado.ok ? "ok" : "error");
+    renderCarrito();
+  } else {
+    mostrarToast("Operación cancelada.", "info");
+  }
+});
+
+function crearRecibo(resumen) {
+  const tabla = el("table", { clase: "receipt" },
+    el("thead", {}, el("tr", {}, el("th", { texto: "Producto" }), el("th", { texto: "Cant." }), el("th", { texto: "Subtotal" }))),
+    el("tbody", {},
+      ...resumen.lineas.map((linea) =>
+        el("tr", {}, el("td", { texto: linea.nombre }), el("td", { texto: String(linea.cantidad) }), el("td", { texto: formatearPrecio(linea.subtotal) }))
+      )
+    )
+  );
+
+  const datos = el("ul", { clase: "mini-list" },
+    el("li", {}, el("span", { texto: "Productos distintos" }), el("span", { texto: String(resumen.productosDistintos) })),
+    el("li", {}, el("span", { texto: "Total de artículos" }), el("span", { texto: String(resumen.totalArticulos) }))
+  );
+
+  const cuerpo = el("div", {},
+    tabla,
+    datos,
+    el("p", { clase: "modal__total" }, el("span", { texto: "Total a pagar" }), el("span", { texto: formatearPrecio(resumen.total) })),
+    el("p", { clase: "thanks", texto: "Gracias por su compra." })
+  );
+  cuerpo.style.display = "grid";
+  cuerpo.style.gap = "0.8rem";
+  return cuerpo;
+}
+
+ref.btnFinalizar.addEventListener("click", async () => {
+  const resultado = tienda.finalizarCompra(); // genera el resumen y limpia el carrito
+  if (!resultado.ok) {
+    mostrarToast(resultado.mensaje, "error");
+    return;
+  }
+
+  renderCarrito();
+  await mostrarDialogo({
+    titulo: "Resumen de compra",
+    cuerpo: crearRecibo(resultado.resumen),
+    acciones: [{ texto: "Seguir comprando", clase: "btn--primary", valor: true }],
+  });
+});
+
+/* ==============================================================================
+   ARRANQUE
+   ============================================================================== */
+renderCatalogo();
+renderCarrito();
+
+  </script>
+</body>
+</html>

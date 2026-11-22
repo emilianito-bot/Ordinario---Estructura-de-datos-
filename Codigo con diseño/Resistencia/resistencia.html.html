@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROYECTO RESISTENCIAS - Anáhuac Mayab</title>
+    <style>
+        :root {
+            --bg-color: #e9ecef;
+            --primary-purple: #6b3ba7;
+            --primary-dark: #4a2574;
+            --purple-badge: #582e91;
+            --card-bg: #f3f4f8;
+            --card-border: #d4d6e2;
+            --text-dark: #3a225d;
+            --text-muted: #7b6d93;
+            --btn-green: #48a999;
+            --btn-blue: #5b9bd5;
+            --btn-red: #a62b38;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        /* HEADER MORADO IGUAL AL DE LA IMAGEN */
+        .header {
+            background-color: var(--primary-purple);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-top: 3px;
+        }
+
+        .badge-institution {
+            background-color: var(--primary-dark);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        /* TARJETAS CON BORDE Y ESTILO DE LA IMAGEN */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--primary-purple);
+            letter-spacing: 0.8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            color: var(--text-dark);
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary-purple);
+        }
+
+        .btn {
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-purple { background-color: var(--primary-dark); }
+        .btn-green { background-color: var(--btn-green); }
+        .btn-blue { background-color: var(--btn-blue); }
+
+        /* DISEÑO GRÁFICO DE LA RESISTENCIA */
+        .resistor-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 0;
+        }
+
+        .resistor-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .wire {
+            width: 70px;
+            height: 6px;
+            background-color: #8c8c8c;
+        }
+
+        .resistor-body {
+            width: 180px;
+            height: 60px;
+            background-color: #d7ccc8;
+            border: 2px solid #8d6e63;
+            border-radius: 30px;
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.15);
+        }
+
+        .band {
+            width: 14px;
+            height: 60px;
+            position: absolute;
+        }
+
+        .b-1 { left: 40px; }
+        .b-2 { left: 75px; }
+        .b-3 { left: 110px; }
+        .b-tol { left: 148px; background-color: #FFD700; } /* Dorado 5% */
+
+        .color-info-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary-purple);
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 650px) {
+            .grid-cards { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+
+        .output-box {
+            background: white;
+            border: 1px dashed var(--card-border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-dark);
+            min-height: 48px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <!-- HEADER CON COLOR MORADO SEGÚN TU REFERENCIA -->
+    <div class="header">
+        <div class="header-title">
+            <h1>PROYECTO CÓDIGO DE RESISTENCIAS</h1>
+            <p>Estructura de Datos: Arreglos (NumPy / Arrays)</p>
+        </div>
+        <div class="badge-institution">Anáhuac Mayab</div>
+    </div>
+
+    <div class="content">
+        <!-- SECCIÓN 1: MODO GRÁFICO RESISTENCIA -->
+        <div class="card">
+            <div class="card-title">1. MODO GRÁFICO - DETERMINAR COLORES</div>
+            <div class="input-group">
+                <input type="number" id="valRes" placeholder="Ejemplo: 160 o 5800" min="10">
+                <button class="btn btn-purple" onclick="procesarColores()">Calcular Colores</button>
+            </div>
+
+            <div class="resistor-display">
+                <div class="resistor-visual">
+                    <div class="wire"></div>
+                    <div class="resistor-body">
+                        <div id="b1" class="band b-1" style="background-color: #bbb;"></div>
+                        <div id="b2" class="band b-2" style="background-color: #bbb;"></div>
+                        <div id="b3" class="band b-3" style="background-color: #bbb;"></div>
+                        <div class="band b-tol"></div>
+                    </div>
+                    <div class="wire"></div>
+                </div>
+                <div id="lblBandas" class="color-info-text">Ingresa un valor para ver las bandas</div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2 Y 3: CÁLCULOS EN SERIE Y PARALELO -->
+        <div class="grid-cards">
+            <!-- SERIE -->
+            <div class="card">
+                <div class="card-title">PILA EN SERIE (Rts)</div>
+                <input type="number" id="numSerie" placeholder="Cantidad (n)..." min="1" style="width: 100%; margin-bottom: 10px;">
+                <button class="btn btn-green" style="width: 100%;" onclick="calcularSerie()">Calcular Serie</button>
+                <div id="resSerie" class="output-box">(Vacío)</div>
+            </div>
+
+            <!-- PARALELO -->
+            <div class="card">
+                <div class="card-title">PILA EN PARALELO (Rtp)</div>
+                <input type="number" id="numParalelo" placeholder="Cantidad (n)..." min="1" style="width: 100%; margin-bottom: 10px;">
+                <button class="btn btn-blue" style="width: 100%;" onclick="calcularParalelo()">Calcular Paralelo</button>
+                <div id="resParalelo" class="output-box">(Vacío)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Paleta de colores estándar
+    const tablaColores = {
+        "Negro": {hex: "#1c1c1c"},
+        "Marrón": {hex: "#8B4513"},
+        "Rojo": {hex: "#FF0000"},
+        "Naranja": {hex: "#FFA500"},
+        "Amarillo": {hex: "#FFD700"},
+        "Verde": {hex: "#008000"},
+        "Azul": {hex: "#0000FF"},
+        "Violeta": {hex: "#8A2BE2"},
+        "Gris": {hex: "#808080"},
+        "Blanco": {hex: "#FFFFFF"}
+    };
+    
+    const listaNombres = Object.keys(tablaColores);
+
+    function procesarColores() {
+        let inputVal = document.getElementById("valRes").value;
+        let valor = parseInt(inputVal);
+
+        if (isNaN(valor) || valor < 10) {
+            alert("Por favor ingresa un valor entero válido (mínimo 10).");
+            return;
+        }
+
+        let strVal = String(valor);
+        let colorB1 = listaNombres[parseInt(strVal[0])];
+        let colorB2 = listaNombres[parseInt(strVal[1])];
+        let colorB3 = listaNombres[strVal.length - 2];
+
+        // Pintar bandas visualmente
+        document.getElementById("b1").style.backgroundColor = tablaColores[colorB1].hex;
+        document.getElementById("b2").style.backgroundColor = tablaColores[colorB2].hex;
+        document.getElementById("b3").style.backgroundColor = tablaColores[colorB3].hex;
+
+        document.getElementById("lblBandas").innerText = `Salida: ${colorB1}, ${colorB2}, ${colorB3}`;
+    }
+
+    function calcularSerie() {
+        let n = parseInt(document.getElementById("numSerie").value);
+        if (isNaN(n) || n <= 0) {
+            alert("Ingresa una cantidad 'n' válida.");
+            return;
+        }
+
+        let rts = 0;
+        let lista = [];
+        for (let i = 0; i < n; i++) {
+            let val = Math.floor(Math.random() * (1000000000 - 10 + 1)) + 10;
+            lista.push(val);
+            rts += val;
+        }
+
+        document.getElementById("resSerie").innerHTML = 
+            `<strong>Generadas (${n}):</strong> [${lista.slice(0, 2).join(", ")}...]<br>` +
+            `<strong style="color: var(--primary-purple);">Rts Total = ${rts.toLocaleString()} Ω</strong>`;
+    }
+
+    function calcularParalelo() {
+        let n = parseInt(document.getElementById("numParalelo").value);
+        if (isNaN(n) || n <= 0) {
+            alert("Ingresa una cantidad 'n' válida.");
+            return;
+        }
+
+        let sumaInversos = 0;
+        let lista = [];
+        for (let i = 0; i < n; i++) {
+            let val = Math.floor(Math.random() * (1000000000 - 10 + 1)) + 10;
+            lista.push(val);
+            sumaInversos += 1.0 / val;
+        }
+
+        let rtp = 1.0 / sumaInversos;
+
+        document.getElementById("resParalelo").innerHTML = 
+            `<strong>Generadas (${n}):</strong> [${lista.slice(0, 2).join(", ")}...]<br>` +
+            `<strong style="color: var(--primary-purple);">Rtp Total = ${rtp.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Ω</strong>`;
+    }
+</script>
+
+</body>
+</html>

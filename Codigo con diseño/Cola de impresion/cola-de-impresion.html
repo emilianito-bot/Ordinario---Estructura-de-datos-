@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Simulación visual de una cola de impresión FIFO con capacidad para 6 trabajos.">
+  <meta name="color-scheme" content="light dark">
+  <title>Cola de impresión · Simulador</title>
+
+  <!-- ==========================================================================
+       1) ESTILOS (CSS)
+       ========================================================================== -->
+  <style>
+    /* ---------- Variables ---------- */
+    :root {
+      --bg: #f3f5fa;
+      --surface: #ffffff;
+      --surface-2: #eef1f8;
+      --text: #151a2c;
+      --muted: #606a85;
+      --border: #dde2ef;
+
+      --primary: #2563eb;
+      --primary-600: #1d4fd0;
+      --primary-soft: #e4ecff;
+      --ring: rgba(37, 99, 235, 0.35);
+
+      --warn: #b45309;
+      --warn-soft: #fff1d6;
+      --warn-border: #f0b44c;
+      --ok: #0f8a4f;
+      --ok-soft: #dcf6e8;
+
+      /* Un color por computadora (siempre acompañado de su nombre escrito) */
+      --pc-1: #2563eb;
+      --pc-2: #0d9488;
+      --pc-3: #7c3aed;
+      --pc-4: #ea580c;
+      --pc-5: #db2777;
+
+      --radius: 18px;
+      --radius-sm: 12px;
+      --shadow: 0 1px 2px rgba(20, 28, 60, 0.06), 0 10px 28px rgba(20, 28, 60, 0.07);
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d111e;
+        --surface: #151b2d;
+        --surface-2: #1d2540;
+        --text: #e9edf8;
+        --muted: #98a3c0;
+        --border: #27304d;
+        --primary: #6b9bff;
+        --primary-600: #8fb2ff;
+        --primary-soft: #1c2a52;
+        --ring: rgba(107, 155, 255, 0.45);
+        --warn: #fbbf5a;
+        --warn-soft: #3b2c10;
+        --warn-border: #7a5a1c;
+        --ok: #4ade80;
+        --ok-soft: #12351f;
+        --pc-1: #6b9bff;
+        --pc-2: #2dd4bf;
+        --pc-3: #a78bfa;
+        --pc-4: #fb923c;
+        --pc-5: #f472b6;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    /* ---------- Base ---------- */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    [hidden] { display: none !important; }
+    h1, h2, h3, p, ol, ul { margin: 0; padding: 0; }
+    ol, ul { list-style: none; }
+    button { font: inherit; color: inherit; }
+    code { font-family: var(--mono); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    /* ---------- Barra superior ---------- */
+    .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topbar__inner { max-width: 1180px; margin: 0 auto; padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 0.7rem; }
+    .brand__logo { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, var(--primary), #7c3aed); }
+    .brand__title { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+    .brand__sub { font-size: 0.8rem; color: var(--muted); }
+    .pill { display: inline-flex; align-items: baseline; gap: 0.45rem; padding: 0.35rem 0.9rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 0.85rem; color: var(--muted); }
+    .pill strong { color: var(--text); font-size: 1rem; }
+
+    /* ---------- Disposición (columnas con minmax(0,1fr): nada se sale de la pantalla) ---------- */
+    .layout { max-width: 1180px; margin: 0 auto; padding: 1.25rem; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.25rem; align-items: start; }
+    .col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; min-width: 0; }
+    .card { min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.35rem; }
+    .card__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
+    .card h2 { font-size: 1.15rem; letter-spacing: -0.01em; }
+
+    /* ---------- Etiqueta de estado ---------- */
+    .badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+    .badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .badge--espera { background: var(--primary-soft); color: var(--primary); }
+    .badge--llena { background: var(--warn-soft); color: var(--warn); }
+
+    /* ---------- Espacios de la cola ---------- */
+    .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.6rem; margin: 1.1rem 0 1rem; }
+    .slot { position: relative; display: grid; align-content: center; justify-items: center; gap: 0.2rem; min-height: 112px; padding: 0.7rem 0.3rem; border-radius: 14px; border: 2px dashed var(--border); background: var(--surface-2); text-align: center; }
+    .slot__pos { position: absolute; top: 6px; left: 9px; font-size: 0.72rem; font-weight: 800; color: var(--muted); }
+    .slot__libre { font-size: 0.82rem; color: var(--muted); }
+    .slot--ocupado { --c: var(--pc-1); border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
+    .slot--ocupado .slot__pos { color: var(--c); }
+    .slot__icono { font-size: 1.5rem; line-height: 1; }
+    .slot__pc { font-size: 1.05rem; font-weight: 800; letter-spacing: 0.01em; }
+    .slot__tag { position: absolute; bottom: -10px; padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--primary); color: #fff; font-size: 0.66rem; font-weight: 800; white-space: nowrap; }
+    .slot--nuevo { animation: entrar 0.35s ease; }
+    .pc-1 { --c: var(--pc-1); } .pc-2 { --c: var(--pc-2); } .pc-3 { --c: var(--pc-3); } .pc-4 { --c: var(--pc-4); } .pc-5 { --c: var(--pc-5); }
+
+    /* ---------- Medidor ---------- */
+    .meter { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    .meter__bar { height: 100%; width: 0; border-radius: 999px; background: var(--primary); transition: width 0.3s ease, background-color 0.3s ease; }
+    .meter__bar--llena { background: var(--warn-border); }
+    .ocupacion { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 0.6rem; font-size: 0.92rem; }
+    .ocupacion strong { font-weight: 800; }
+    .lista-texto { margin-top: 0.4rem; font-size: 0.85rem; color: var(--muted); word-break: break-word; }
+    .lista-texto code { color: var(--text); background: var(--surface-2); padding: 0.1rem 0.4rem; border-radius: 6px; }
+    .sacudir { animation: sacudir 0.4s ease; }
+
+    /* ---------- Botones ---------- */
+    .acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.2rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); border: 1px solid transparent; font-weight: 700; font-size: 1rem; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn--primary { background: var(--primary); color: #fff; box-shadow: 0 8px 18px -8px var(--primary); }
+    .btn--primary:hover { background: var(--primary-600); transform: translateY(-1px); }
+    .btn--secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .btn--secondary:hover { background: var(--surface-2); transform: translateY(-1px); }
+    .btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    /* ---------- Mensaje del sistema ---------- */
+    .mensaje { display: flex; align-items: center; gap: 0.7rem; margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); font-weight: 600; }
+    .mensaje__icono { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 0.85rem; font-weight: 800; color: #fff; background: var(--muted); }
+    .mensaje--ok { background: var(--ok-soft); border-color: transparent; }
+    .mensaje--ok .mensaje__icono { background: var(--ok); }
+    .mensaje--aviso { background: var(--warn-soft); border-color: var(--warn-border); }
+    .mensaje--aviso .mensaje__icono { background: var(--warn); }
+    .mensaje--nuevo { animation: aparecer 0.25s ease; }
+
+    /* ---------- Impresora ---------- */
+    .impresora { display: grid; gap: 1rem; }
+    .impresora__cuerpo { position: relative; display: grid; place-items: center; height: 150px; border-radius: var(--radius-sm); background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--border); overflow: hidden; }
+    .impresora__icono { color: var(--primary); }
+    .impresora__ranura { position: absolute; left: 50%; bottom: 0; width: 56px; height: 0; transform: translateX(-50%); }
+    .papel { position: absolute; left: 0; top: 0; width: 56px; height: 64px; border-radius: 4px 4px 0 0; background: #fff; border: 1px solid var(--border); border-bottom: 0; transform: translateY(-100%); opacity: 0; }
+    .papel::before { content: ""; position: absolute; inset: 10px 8px auto; height: 3px; border-radius: 2px; background: var(--border); box-shadow: 0 8px 0 var(--border), 0 16px 0 var(--border), 0 24px 0 var(--border); }
+    .impresora--activa .papel { animation: papel 0.9s ease forwards; }
+    .impresora--activa .impresora__icono { animation: vibrar 0.3s linear 3; }
+    .impresora__estado { display: grid; gap: 0.2rem; }
+    .impresora__linea { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.92rem; }
+    .impresora__linea span:first-child { color: var(--muted); }
+    .impresora__linea strong { font-weight: 800; }
+
+    /* ---------- Computadoras ---------- */
+    .pcs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+    .pc-chip { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.8rem; border-radius: 999px; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 12%, var(--surface)); font-size: 0.88rem; font-weight: 700; }
+    .pc-chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+
+    /* ---------- Historial ---------- */
+    .historial { display: grid; gap: 0.5rem; margin-top: 0.8rem; max-height: 340px; overflow: auto; }
+    .historial__vacio { padding: 1rem; border: 1px dashed var(--border); border-radius: var(--radius-sm); text-align: center; color: var(--muted); font-size: 0.92rem; }
+    .evento { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); background: var(--surface-2); animation: aparecer 0.25s ease; }
+    .evento__num { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 0.3rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: 0.75rem; font-weight: 800; color: var(--muted); }
+    .evento__texto { font-weight: 600; }
+    .evento__meta { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+    .evento--aviso .evento__texto { color: var(--warn); }
+
+    .footer { padding: 1.5rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+    @keyframes entrar { from { opacity: 0; transform: translateX(18px) scale(0.92); } to { opacity: 1; transform: none; } }
+    @keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes sacudir { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+    @keyframes vibrar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+    @keyframes papel { 0% { opacity: 1; transform: translateY(-100%); } 55% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(20%); } }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .layout { padding: 0.8rem; }
+      .card { padding: 1.05rem; }
+      .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 1.1rem; }
+      .acciones { grid-template-columns: 1fr; }
+      .evento { grid-template-columns: auto 1fr; }
+      .evento__meta { grid-column: 2; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+
+<!-- ============================================================================
+     2) ESTRUCTURA (HTML)
+     ============================================================================ -->
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <span class="brand__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+        </span>
+        <div>
+          <h1 class="brand__title">Cola de impresión</h1>
+          <p class="brand__sub">Simulador de una cola FIFO compartida</p>
+        </div>
+      </div>
+      <p class="pill">Espacio ocupado <strong id="pillOcupado">0 de 6</strong></p>
+    </div>
+  </header>
+
+  <noscript><p class="muted" style="padding:1rem">Esta página necesita JavaScript activado para funcionar.</p></noscript>
+
+  <main class="layout">
+
+    <!-- ========== Columna principal: cola, acciones e historial ========== -->
+    <div class="col">
+
+      <section class="card" aria-labelledby="tituloCola">
+        <div class="card__head">
+          <h2 id="tituloCola">Estado de la cola</h2>
+          <span class="badge" id="badgeEstado">Vacía</span>
+        </div>
+        <p class="muted">El trabajo de la posición 1 se imprime primero. Los nuevos se agregan después del último (primero en entrar, primero en salir).</p>
+
+        <ol class="slots" id="slots" aria-label="Espacios de la cola de impresión"></ol>
+
+        <div class="meter" id="medidor" role="meter" aria-label="Espacio ocupado" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0">
+          <div class="meter__bar" id="medidorBarra"></div>
+        </div>
+        <div class="ocupacion">
+          <span>Espacio ocupado: <strong id="textoOcupacion">0 de 6</strong></span>
+          <span>Estado actual de la cola: <code id="listaTexto">[]</code></span>
+        </div>
+
+        <!-- Opciones 1 y 2 del menú original -->
+        <div class="acciones">
+          <button type="button" class="btn btn--primary" id="btnAgregar">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar trabajo
+          </button>
+          <button type="button" class="btn btn--secondary" id="btnImprimir">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+            Imprimir documento
+          </button>
+        </div>
+
+        <div class="mensaje" id="mensaje" role="status" aria-live="polite">
+          <span class="mensaje__icono" id="mensajeIcono" aria-hidden="true">i</span>
+          <span id="mensajeTexto">Listo. Presione "Agregar trabajo" para enviar un trabajo a la cola.</span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="tituloHistorial">
+        <div class="card__head"><h2 id="tituloHistorial">Historial de movimientos</h2></div>
+        <p class="muted">Cada acción deja aquí el mismo mensaje que mostraba el programa de consola. Lo más reciente va arriba.</p>
+        <ol class="historial" id="historial" aria-label="Movimientos"></ol>
+      </section>
+    </div>
+
+    <!-- ========== Columna lateral: impresora y computadoras ========== -->
+    <aside class="col">
+      <section class="card impresora" id="impresora" aria-labelledby="tituloImpresora">
+        <div class="card__head" style="margin-bottom:0"><h2 id="tituloImpresora">Impresora</h2></div>
+        <div class="impresora__cuerpo" aria-hidden="true">
+          <svg class="impresora__icono" viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+          <div class="impresora__ranura"><div class="papel"></div></div>
+        </div>
+        <div class="impresora__estado">
+          <p class="impresora__linea"><span>Estado</span><strong id="impEstado">En espera</strong></p>
+          <p class="impresora__linea"><span>Última impresión</span><strong id="impUltima">Ninguna todavía</strong></p>
+          <p class="impresora__linea"><span>Trabajos en espera</span><strong id="impEspera">0</strong></p>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="tituloPcs">
+        <div class="card__head" style="margin-bottom:0"><h2 id="tituloPcs">Computadoras conectadas</h2></div>
+        <p class="muted">Cada trabajo nuevo se asigna al azar a una de estas computadoras.</p>
+        <ul class="pcs" id="pcs" aria-label="Computadoras"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">Simulación de una cola de impresión (FIFO)</footer>
+
+  <!-- ==========================================================================
+       3) LÓGICA DEL NEGOCIO (JavaScript, sin tocar el DOM)
+       Traducción directa del programa en Python. Las variables globales
+       (cola, capacidad_maxima, pcs) pasan a ser una clase para poder probarla
+       sola; los print() pasan a ser mensajes devueltos en un objeto.
+       ========================================================================== -->
+  <script id="logica">
+    "use strict";
+
+    const CAPACIDAD_MAXIMA = 6;
+    const PCS = Object.freeze(["PC1", "PC2", "PC3", "PC4", "PC5"]);
+
+    class ColaImpresion {
+      /**
+       * @param {number} capacidad  cuántos trabajos caben (capacidad_maxima en Python)
+       * @param {string[]} pcs      computadoras disponibles
+       * @param {(n:number)=>number} elegirIndice  devuelve un entero entre 0 y n-1.
+       *        Por defecto es aleatorio (como random.choice); se puede inyectar para pruebas.
+       */
+      constructor(capacidad = CAPACIDAD_MAXIMA, pcs = PCS, elegirIndice = (n) => Math.floor(Math.random() * n)) {
+        this.capacidad = capacidad;
+        this.pcs = [...pcs];
+        this.elegirIndice = elegirIndice;
+        this._cola = []; // la lista "cola" del programa original
+      }
+
+      get ocupados() { return this._cola.length; }
+      get llena() { return this._cola.length >= this.capacidad; }
+      get vacia() { return this._cola.length === 0; }
+      /** Copia de la cola (de más antiguo a más reciente), para que nadie la modifique desde fuera. */
+      get trabajos() { return [...this._cola]; }
+
+      /** Opción 1: agregar trabajo. */
+      agregarTrabajo() {
+        if (this.llena) {
+          return { ok: false, razon: "llena", mensaje: "La cola de impresión está LLENA" };
+        }
+        const indice = this.elegirIndice(this.pcs.length);
+        if (!Number.isInteger(indice) || indice < 0 || indice >= this.pcs.length) {
+          throw new RangeError("elegirIndice debe devolver un entero válido.");
+        }
+        const pc = this.pcs[indice];
+        this._cola.push(pc); // append
+        return { ok: true, pc, mensaje: `Se agregó: ${pc}` };
+      }
+
+      /** Opción 2: imprimir documento (saca el primero de la cola, igual que pop(0)). */
+      imprimirDocumento() {
+        if (this.vacia) {
+          return { ok: false, razon: "vacia", mensaje: "La cola de impresión está VACÍA" };
+        }
+        const atendido = this._cola.shift();
+        return { ok: true, atendido, mensaje: `Impresión ${atendido}` };
+      }
+    }
+
+    // Permite probar esta lógica con Node.js sin afectar al navegador.
+    if (typeof module !== "undefined" && module.exports) {
+      module.exports = { ColaImpresion, CAPACIDAD_MAXIMA, PCS };
+    }
+  </script>
+
+  <!-- ==========================================================================
+       4) INTERFAZ (JavaScript: conecta la lógica con la página)
+
+       Equivalencia con el menú de consola de Python:
+         1. Agregar trabajo ........ botón "Agregar trabajo"
+         2. Imprimir documento ..... botón "Imprimir documento"
+         3. Salir .................. no aplica en una página web (se cierra la pestaña)
+       ========================================================================== -->
+  <script id="interfaz">
+    "use strict";
+
+    const cola = new ColaImpresion();
+
+    /** Estado de la pantalla (no forma parte de la lógica de la cola). */
+    const estado = {
+      historial: [],       // movimientos, del más antiguo al más reciente
+      ultimaImpresion: null,
+      indiceNuevo: null,   // posición del trabajo recién agregado (para animarlo)
+      temporizadorImpresora: null,
+    };
+    const MAX_HISTORIAL = 100;
+
+    const $ = (id) => document.getElementById(id);
+    const ref = {
+      slots: $("slots"), badge: $("badgeEstado"), pill: $("pillOcupado"), medidor: $("medidor"), barra: $("medidorBarra"),
+      textoOcupacion: $("textoOcupacion"), listaTexto: $("listaTexto"), btnAgregar: $("btnAgregar"), btnImprimir: $("btnImprimir"),
+      mensaje: $("mensaje"), mensajeIcono: $("mensajeIcono"), mensajeTexto: $("mensajeTexto"), historial: $("historial"),
+      impresora: $("impresora"), impEstado: $("impEstado"), impUltima: $("impUltima"), impEspera: $("impEspera"), pcs: $("pcs"),
+      tarjetaCola: $("tituloCola").closest(".card"),
+    };
+
+    /** Crea elementos de forma segura (usa textContent, nunca innerHTML con datos). */
+    function el(etiqueta, props = {}, ...hijos) {
+      const nodo = document.createElement(etiqueta);
+      const { clase, texto, ...atributos } = props;
+      if (clase) nodo.className = clase;
+      if (texto !== undefined) nodo.textContent = texto;
+      for (const [nombre, valor] of Object.entries(atributos)) nodo.setAttribute(nombre, valor);
+      nodo.append(...hijos);
+      return nodo;
+    }
+
+    /** Clase de color según la posición de la PC en la lista (pc-1 ... pc-5). */
+    const claseColor = (pc) => `pc-${(Math.max(0, cola.pcs.indexOf(pc)) % 5) + 1}`;
+
+    /** Reinicia una animación CSS sobre un elemento. */
+    function reanimar(elemento, clase) {
+      elemento.classList.remove(clase);
+      void elemento.offsetWidth;
+      elemento.classList.add(clase);
+    }
+
+    /* ---------- Cola (espacios) ---------- */
+    function renderSlots() {
+      const trabajos = cola.trabajos;
+      const items = [];
+      for (let i = 0; i < cola.capacidad; i++) {
+        const pc = trabajos[i];
+        if (pc === undefined) {
+          items.push(el("li", { clase: "slot", "aria-label": `Posición ${i + 1}: libre` },
+            el("span", { clase: "slot__pos", "aria-hidden": "true", texto: String(i + 1) }),
+            el("span", { clase: "slot__libre", texto: "Libre" })));
+          continue;
+        }
+        const esPrimero = i === 0;
+        const clases = ["slot", "slot--ocupado", claseColor(pc)];
+        if (estado.indiceNuevo === i) clases.push("slot--nuevo");
+        const hijos = [
+          el("span", { clase: "slot__pos", "aria-hidden": "true", texto: String(i + 1) }),
+          el("span", { clase: "slot__icono", "aria-hidden": "true", texto: "🖥️" }),
+          el("span", { clase: "slot__pc", texto: pc }),
+        ];
+        if (esPrimero) hijos.push(el("span", { clase: "slot__tag", "aria-hidden": "true", texto: "Sale primero" }));
+        items.push(el("li", { clase: clases.join(" "), "aria-label": `Posición ${i + 1}: ${pc}${esPrimero ? ", se imprime primero" : ""}` }, ...hijos));
+      }
+      ref.slots.replaceChildren(...items);
+      estado.indiceNuevo = null;
+    }
+
+    /* ---------- Resumen de ocupación ---------- */
+    function renderResumen() {
+      const { ocupados, capacidad } = cola;
+      const textoCupo = `${ocupados} de ${capacidad}`;
+      ref.pill.textContent = textoCupo;
+      ref.textoOcupacion.textContent = textoCupo;
+      ref.listaTexto.textContent = `[${cola.trabajos.join(", ")}]`;
+
+      ref.medidor.setAttribute("aria-valuenow", String(ocupados));
+      ref.medidor.setAttribute("aria-valuemax", String(capacidad));
+      ref.medidor.setAttribute("aria-valuetext", `${ocupados} de ${capacidad} espacios ocupados`);
+      ref.barra.style.width = `${(ocupados / capacidad) * 100}%`;
+      ref.barra.classList.toggle("meter__bar--llena", cola.llena);
+
+      ref.badge.className = "badge" + (cola.llena ? " badge--llena" : cola.vacia ? "" : " badge--espera");
+      ref.badge.textContent = cola.llena ? "Llena" : cola.vacia ? "Vacía" : `${ocupados} en espera`;
+    }
+
+    /* ---------- Impresora ---------- */
+    function renderImpresora() {
+      ref.impUltima.textContent = estado.ultimaImpresion ?? "Ninguna todavía";
+      ref.impEspera.textContent = String(cola.ocupados);
+      ref.impEstado.textContent = ref.impresora.classList.contains("impresora--activa") ? "Imprimiendo…" : "En espera";
+    }
+
+    function animarImpresora() {
+      clearTimeout(estado.temporizadorImpresora);
+      ref.impresora.classList.remove("impresora--activa");
+      void ref.impresora.offsetWidth;
+      ref.impresora.classList.add("impresora--activa");
+      estado.temporizadorImpresora = setTimeout(() => {
+        ref.impresora.classList.remove("impresora--activa");
+        renderImpresora();
+      }, 950);
+    }
+
+    /* ---------- Mensaje actual e historial ---------- */
+    function mostrarMensaje(texto, tipo) {
+      ref.mensaje.className = `mensaje mensaje--${tipo}`;
+      ref.mensajeIcono.textContent = { ok: "✓", aviso: "!", info: "i" }[tipo];
+      ref.mensajeTexto.textContent = texto;
+      reanimar(ref.mensaje, "mensaje--nuevo");
+    }
+
+    function registrarEvento(texto, tipo) {
+      estado.historial.push({ texto, tipo, ocupacion: `${cola.ocupados} de ${cola.capacidad}` });
+      if (estado.historial.length > MAX_HISTORIAL) estado.historial.shift();
+    }
+
+    function renderHistorial() {
+      if (estado.historial.length === 0) {
+        ref.historial.replaceChildren(el("li", { clase: "historial__vacio", texto: "Aún no hay movimientos." }));
+        return;
+      }
+      const filas = estado.historial.map((evento, i) =>
+        el("li", { clase: `evento evento--${evento.tipo}` },
+          el("span", { clase: "evento__num", "aria-label": `Movimiento ${i + 1}`, texto: String(i + 1) }),
+          el("span", { clase: "evento__texto", texto: evento.texto }),
+          el("span", { clase: "evento__meta", texto: `Ocupado: ${evento.ocupacion}` }))
+      );
+      ref.historial.replaceChildren(...filas.reverse());
+    }
+
+    function renderTodo() {
+      renderSlots();
+      renderResumen();
+      renderImpresora();
+      renderHistorial();
+    }
+
+    /* ==========================================================================
+       ACCIONES (opciones 1 y 2 del menú)
+       ========================================================================== */
+    ref.btnAgregar.addEventListener("click", () => {
+      const resultado = cola.agregarTrabajo();
+      if (resultado.ok) {
+        estado.indiceNuevo = cola.ocupados - 1;
+        mostrarMensaje(resultado.mensaje, "ok");
+        registrarEvento(resultado.mensaje, "ok");
+      } else {
+        mostrarMensaje(resultado.mensaje, "aviso");
+        registrarEvento(resultado.mensaje, "aviso");
+        reanimar(ref.tarjetaCola, "sacudir");
+      }
+      renderTodo();
+    });
+
+    ref.btnImprimir.addEventListener("click", () => {
+      const resultado = cola.imprimirDocumento();
+      if (resultado.ok) {
+        estado.ultimaImpresion = resultado.atendido;
+        mostrarMensaje(resultado.mensaje, "ok");
+        registrarEvento(resultado.mensaje, "ok");
+        animarImpresora();
+      } else {
+        mostrarMensaje(resultado.mensaje, "aviso");
+        registrarEvento(resultado.mensaje, "aviso");
+        reanimar(ref.tarjetaCola, "sacudir");
+      }
+      renderTodo();
+    });
+
+    /* ---------- Arranque ---------- */
+    ref.pcs.replaceChildren(...cola.pcs.map((pc) => el("li", { clase: `pc-chip ${claseColor(pc)}`, texto: pc })));
+    renderTodo();
+  </script>
+</body>
+</html>
