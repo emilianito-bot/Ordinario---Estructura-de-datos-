@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Calcula el camino más corto entre Pueblos Mágicos de Yucatán con el algoritmo de Dijkstra.">
+  <meta name="color-scheme" content="light dark">
+  <title>Ruta Mágica Yucatán · Camino más corto</title>
+
+  <!-- ==========================================================================
+       1) ESTILOS (CSS)
+       ========================================================================== -->
+  <style>
+    /* ---------- Variables ---------- */
+    :root {
+      --bg: #f6f1e7;
+      --surface: #fffdf8;
+      --surface-2: #f3ede0;
+      --text: #1d2927;
+      --muted: #65706a;
+      --border: #e5dbc6;
+
+      --on-primary: #ffffff;
+      --primary: #0f766e;
+      --primary-600: #0b5f59;
+      --primary-soft: #d9f0ec;
+      --ring: rgba(15, 118, 110, 0.35);
+
+      --origen: #15803d;
+      --destino: #c2410c;
+      --destino-soft: #fde9dc;
+      --error: #b42318;
+      --error-soft: #fde8e6;
+
+      --mar: #e3f0ef;
+      --tierra: #efe6d2;
+      --carretera: #b9ae95;
+
+      --radius: 18px;
+      --radius-sm: 12px;
+      --shadow: 0 1px 2px rgba(40, 35, 20, 0.06), 0 10px 28px rgba(40, 35, 20, 0.08);
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1514;
+        --surface: #172120;
+        --surface-2: #1e2b29;
+        --text: #e8efec;
+        --muted: #9db0aa;
+        --border: #2a3a37;
+        --on-primary: #04211e;
+        --primary: #2dd4bf;
+        --primary-600: #5eead4;
+        --primary-soft: #11403c;
+        --ring: rgba(45, 212, 191, 0.4);
+        --origen: #4ade80;
+        --destino: #fb923c;
+        --destino-soft: #40261a;
+        --error: #ff8a80;
+        --error-soft: #411f1c;
+        --mar: #12302f;
+        --tierra: #1c2926;
+        --carretera: #55655f;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    /* ---------- Base ---------- */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    [hidden] { display: none !important; }
+    h1, h2, h3, p, ol, ul, dl, dd { margin: 0; padding: 0; }
+    ol, ul { list-style: none; }
+    button, select { font: inherit; color: inherit; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    /* ---------- Barra superior ---------- */
+    .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topbar__inner { max-width: 1240px; margin: 0 auto; padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 0.7rem; }
+    .brand__logo { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, var(--primary), #c2410c); }
+    .brand__title { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+    .brand__sub { font-size: 0.8rem; color: var(--muted); }
+    .pill { display: inline-flex; align-items: baseline; gap: 0.45rem; padding: 0.35rem 0.9rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 0.85rem; color: var(--muted); }
+    .pill strong { color: var(--text); }
+
+    /* ---------- Disposición ---------- */
+    .layout { max-width: 1240px; margin: 0 auto; padding: 1.25rem; display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+    .col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-content: start; min-width: 0; }
+    .card { min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.35rem; }
+    .card h2 { font-size: 1.15rem; letter-spacing: -0.01em; }
+    .card__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+
+    /* ---------- Formulario ---------- */
+    .form { display: grid; gap: 1rem; margin-top: 1rem; }
+    .campo { display: grid; gap: 0.3rem; }
+    .campo label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 700; }
+    .letra { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 0.75rem; font-weight: 800; }
+    .letra--a { background: var(--origen); }
+    .letra--b { background: var(--destino); }
+    select { width: 100%; padding: 0.7rem 2.2rem 0.7rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background-color: var(--surface); outline: none; cursor: pointer; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+      background-repeat: no-repeat; background-position: right 0.8rem center; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+    select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    select[aria-invalid="true"] { border-color: var(--error); }
+    .campo__error { font-size: 0.84rem; color: var(--error); font-weight: 600; }
+    .campo__error:empty { display: none; }
+    .intercambio { display: flex; justify-content: center; margin: -0.35rem 0; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; padding: 0.85rem 1.1rem; border-radius: var(--radius-sm); border: 1px solid transparent; font-weight: 700; font-size: 1rem; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn--primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 8px 18px -8px var(--primary); }
+    .btn--primary:hover { background: var(--primary-600); transform: translateY(-1px); }
+    .btn--ghost { background: transparent; border-color: var(--border); color: var(--text); padding: 0.4rem 0.9rem; font-size: 0.88rem; }
+    .btn--ghost:hover { background: var(--surface-2); }
+    .btn:focus-visible, summary:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    /* ---------- Resultado ---------- */
+    .placeholder { padding: 1.1rem; margin-top: 0.8rem; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--muted); text-align: center; }
+    .aviso { display: flex; align-items: center; gap: 0.7rem; margin-top: 0.9rem; padding: 0.8rem 1rem; border-radius: var(--radius-sm); font-weight: 700; animation: aparecer 0.25s ease; }
+    .aviso__icono { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-size: 0.85rem; font-weight: 800; }
+    .aviso--ok { background: var(--primary-soft); }
+    .aviso--ok .aviso__icono { background: var(--primary); color: var(--on-primary); }
+    .aviso--info { background: var(--destino-soft); }
+    .aviso--info .aviso__icono { background: var(--destino); }
+    .aviso--error { background: var(--error-soft); color: var(--error); }
+    .aviso--error .aviso__icono { background: var(--error); }
+
+    .algoritmo { display: inline-block; margin-top: 0.8rem; padding: 0.15rem 0.7rem; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-top: 0.9rem; }
+    .cifra { padding: 0.8rem 0.95rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); animation: aparecer 0.25s ease; }
+    .cifra dt { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+    .cifra dd { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+    .cifra dd small { font-size: 0.95rem; font-weight: 700; color: var(--muted); margin-left: 0.15rem; }
+    .cifra--principal dd { color: var(--primary); }
+
+    .subtitulo { margin-top: 1.1rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+    .tramos { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
+    .tramo { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); background: var(--surface-2); animation: aparecer 0.3s ease both; }
+    .tramo__num { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: var(--on-primary); font-size: 0.78rem; font-weight: 800; }
+    .tramo__ruta { font-weight: 700; }
+    .tramo__ruta i { font-style: normal; color: var(--muted); margin: 0 0.25rem; }
+    .tramo__km { font-weight: 800; white-space: nowrap; }
+    .ruta-completa { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-top: 0.5rem; }
+    .ruta-completa .paso { padding: 0.2rem 0.7rem; border-radius: 999px; border: 1.5px solid var(--primary); background: var(--primary-soft); font-weight: 700; font-size: 0.9rem; }
+    .ruta-completa .paso--origen { border-color: var(--origen); }
+    .ruta-completa .paso--destino { border-color: var(--destino); }
+    .ruta-completa .flecha { color: var(--muted); }
+
+    .traza { margin-top: 1.1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .traza summary { padding: 0.7rem 0.9rem; font-weight: 700; cursor: pointer; }
+    .traza__cuerpo { padding: 0 0.9rem 0.9rem; display: grid; gap: 0.7rem; }
+    .tabla-scroll { overflow-x: auto; margin-top: 0.8rem; }
+    .traza__cuerpo .tabla-scroll { margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 0.5rem 0.4rem 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 0.45rem 0.5rem 0.45rem 0; border-bottom: 1px solid var(--border); }
+    th.num, td.num { text-align: right; padding-right: 0.8rem; }
+
+    /* ---------- Mapa ---------- */
+    .mapa-marco { margin-top: 0.8rem; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); background: var(--tierra); }
+    .mapa-marco svg { display: block; width: 100%; height: auto; }
+    .mapa-fondo { fill: var(--tierra); }
+    .mapa-mar { fill: var(--mar); }
+    .mapa-texto-mar { fill: var(--muted); font-size: 12px; font-style: italic; letter-spacing: 0.12em; opacity: 0.8; }
+    .arista { fill: none; stroke: var(--carretera); stroke-width: 3; stroke-linecap: round; }
+    .arista--ruta { stroke: var(--primary); stroke-width: 6; stroke-dasharray: 1; stroke-dashoffset: 1; animation: dibujar 0.7s ease forwards; }
+    .arista-km { fill: var(--muted); font-size: 12px; font-weight: 700; paint-order: stroke; stroke: var(--tierra); stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; }
+    .arista-km--ruta { fill: var(--text); font-size: 13px; font-weight: 800; }
+    .nodo-punto { fill: var(--surface); stroke: var(--muted); stroke-width: 3; }
+    .nodo--ruta .nodo-punto { fill: var(--primary); stroke: var(--primary); }
+    .nodo-nombre { fill: var(--text); font-size: 14px; font-weight: 700; paint-order: stroke; stroke: var(--tierra); stroke-width: 5px; stroke-linejoin: round; }
+    .marcador { stroke: var(--surface); stroke-width: 3; }
+    .marcador--origen { fill: var(--origen); }
+    .marcador--destino { fill: var(--destino); }
+    .marcador--ambos { fill: var(--primary); }
+    .marcador-texto { fill: #fff; font-size: 12px; font-weight: 800; text-anchor: middle; }
+    .leyenda { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; margin-top: 0.8rem; font-size: 0.82rem; color: var(--muted); }
+    .leyenda span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .leyenda .letra { width: 18px; height: 18px; font-size: 0.68rem; }
+    .trazo { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--carretera); border-radius: 2px; }
+    .trazo--ruta { border-top: 5px solid var(--primary); }
+
+    /* ---------- Carreteras ---------- */
+    tr.en-ruta td { background: var(--primary-soft); font-weight: 700; }
+    tr.en-ruta td:first-child { border-radius: 8px 0 0 8px; padding-left: 0.5rem; }
+    tr.en-ruta td:last-child { border-radius: 0 8px 8px 0; }
+
+    .footer { padding: 1.5rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+    @keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes dibujar { to { stroke-dashoffset: 0; } }
+
+    /* ---------- Responsive: en pantallas pequeñas el orden es formulario, mapa, resultado, carreteras ---------- */
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .col { display: contents; }
+      .c-form { order: 1; }
+      .c-mapa { order: 2; }
+      .c-resultado { order: 3; }
+      .c-carreteras { order: 4; }
+    }
+    @media (max-width: 520px) {
+      .layout { padding: 0.8rem; gap: 1rem; }
+      .card { padding: 1.05rem; }
+      .cifra dd { font-size: 1.45rem; }
+      .tramo { grid-template-columns: auto 1fr; }
+      .tramo__km { grid-column: 2; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+
+<!-- ============================================================================
+     2) ESTRUCTURA (HTML)
+     ============================================================================ -->
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <span class="brand__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></svg>
+        </span>
+        <div>
+          <h1 class="brand__title">Ruta Mágica Yucatán</h1>
+          <p class="brand__sub">Camino más corto entre Pueblos Mágicos</p>
+        </div>
+      </div>
+      <p class="pill">Algoritmo: <strong>Dijkstra</strong></p>
+    </div>
+  </header>
+
+  <noscript><p class="muted" style="padding:1rem">Esta página necesita JavaScript activado para funcionar.</p></noscript>
+
+  <main class="layout">
+
+    <!-- ========== Columna izquierda: consulta y resultado ========== -->
+    <div class="col">
+
+      <section class="card c-form" aria-labelledby="tituloConsulta">
+        <h2 id="tituloConsulta">Planea tu ruta</h2>
+        <p class="muted">Elige el pueblo de origen y el de destino. Se calculará el camino con menos kilómetros.</p>
+
+        <form class="form" id="formulario" novalidate>
+          <div class="campo">
+            <label for="selOrigen"><span class="letra letra--a" aria-hidden="true">A</span> Pueblo de origen</label>
+            <select id="selOrigen" aria-describedby="errOrigen"></select>
+            <p class="campo__error" id="errOrigen" role="alert"></p>
+          </div>
+
+          <div class="intercambio">
+            <button type="button" class="btn btn--ghost" id="btnIntercambiar" aria-label="Intercambiar origen y destino">⇅ Intercambiar</button>
+          </div>
+
+          <div class="campo">
+            <label for="selDestino"><span class="letra letra--b" aria-hidden="true">B</span> Pueblo de destino</label>
+            <select id="selDestino" aria-describedby="errDestino"></select>
+            <p class="campo__error" id="errDestino" role="alert"></p>
+          </div>
+
+          <button type="submit" class="btn btn--primary">Calcular ruta más corta</button>
+        </form>
+      </section>
+
+      <section class="card c-resultado" aria-labelledby="tituloResultado">
+        <h2 id="tituloResultado">Resultado</h2>
+        <div id="resultado" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- ========== Columna derecha: mapa y carreteras ========== -->
+    <div class="col">
+
+      <section class="card c-mapa" aria-labelledby="tituloMapa">
+        <div class="card__head"><h2 id="tituloMapa">Mapa de Pueblos Mágicos</h2></div>
+        <p class="muted">Esquema aproximado de la ubicación de los pueblos. Los kilómetros son los del grafo; no se miden sobre el dibujo.</p>
+        <div class="mapa-marco" id="mapa"></div>
+        <div class="leyenda" aria-label="Leyenda del mapa">
+          <span><i class="letra letra--a" aria-hidden="true">A</i> Origen</span>
+          <span><i class="letra letra--b" aria-hidden="true">B</i> Destino</span>
+          <span><i class="trazo trazo--ruta"></i> Ruta más corta</span>
+          <span><i class="trazo"></i> Carretera</span>
+        </div>
+      </section>
+
+      <section class="card c-carreteras" aria-labelledby="tituloCarreteras">
+        <div class="card__head"><h2 id="tituloCarreteras">Carreteras entre pueblos</h2></div>
+        <p class="muted">Las 10 conexiones del grafo. Las que forman parte de la ruta calculada aparecen resaltadas.</p>
+        <div class="tabla-scroll">
+          <table>
+            <thead><tr><th scope="col">Carretera</th><th scope="col" class="num">Kilómetros</th></tr></thead>
+            <tbody id="tablaCarreteras"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">Ruta Mágica Yucatán · Grafo ponderado y no dirigido de 7 pueblos</footer>
+
+  <!-- ==========================================================================
+       3) LÓGICA DEL NEGOCIO (JavaScript, sin tocar el DOM)
+       Traducción directa del programa en Python: el grafo, Dijkstra con cola de
+       prioridad y la reconstrucción de la ruta. Los print() pasan a ser datos
+       devueltos, y la interfaz decide cómo mostrarlos.
+       ========================================================================== -->
+  <script id="logica">
+    "use strict";
+
+    const PUEBLOS = Object.freeze(["Izamal", "Valladolid", "Sisal", "Mani", "Espita", "Motul", "Tekax"]);
+
+    // Las 10 carreteras, en el mismo orden que en el programa original: [pueblo, pueblo, km]
+    const CARRETERAS = Object.freeze([
+      ["Sisal", "Motul", 88],
+      ["Motul", "Izamal", 32],
+      ["Motul", "Espita", 122],
+      ["Izamal", "Valladolid", 96],
+      ["Izamal", "Mani", 89],
+      ["Espita", "Valladolid", 45],
+      ["Mani", "Tekax", 42],
+      ["Valladolid", "Tekax", 175],
+      ["Sisal", "Mani", 125],
+      ["Izamal", "Espita", 105],
+    ]);
+
+    /**
+     * Crea un grafo ponderado y no dirigido como lista de adyacencia
+     * (Map: pueblo -> lista de [vecino, km]).
+     * Respecto al original, valida los datos: pueblos existentes, km positivos y sin carreteras repetidas.
+     */
+    function crearGrafo(pueblos = PUEBLOS, carreteras = CARRETERAS) {
+      const grafo = new Map(pueblos.map((pueblo) => [pueblo, []]));
+
+      const conectar = (origen, destino, km) => {
+        for (const pueblo of [origen, destino]) {
+          if (!grafo.has(pueblo)) throw new Error(`El pueblo "${pueblo}" no existe en el grafo.`);
+        }
+        if (!Number.isFinite(km) || km <= 0) throw new Error(`Los km de ${origen}–${destino} deben ser un número mayor a 0.`);
+        if (grafo.get(origen).some(([vecino]) => vecino === destino)) {
+          throw new Error(`La carretera ${origen}–${destino} está repetida.`);
+        }
+        // Grafo no dirigido: conexión en ambos sentidos
+        grafo.get(origen).push([destino, km]);
+        grafo.get(destino).push([origen, km]);
+      };
+
+      for (const [origen, destino, km] of carreteras) conectar(origen, destino, km);
+      return grafo;
+    }
+
+    /**
+     * Cola de prioridad (montículo mínimo). Hace lo mismo que heapq en Python:
+     * ordena por distancia y, si hay empate, por nombre del pueblo.
+     */
+    class ColaPrioridad {
+      constructor() { this.datos = []; }
+      get longitud() { return this.datos.length; }
+
+      static menor(a, b) { return a[0] !== b[0] ? a[0] < b[0] : a[1] < b[1]; }
+
+      push(elemento) {
+        const datos = this.datos;
+        datos.push(elemento);
+        let i = datos.length - 1;
+        while (i > 0) {
+          const padre = (i - 1) >> 1;
+          if (!ColaPrioridad.menor(datos[i], datos[padre])) break;
+          [datos[i], datos[padre]] = [datos[padre], datos[i]];
+          i = padre;
+        }
+      }
+
+      pop() {
+        const datos = this.datos;
+        const primero = datos[0];
+        const ultimo = datos.pop();
+        if (datos.length > 0) {
+          datos[0] = ultimo;
+          let i = 0;
+          for (;;) {
+            const izq = 2 * i + 1, der = izq + 1;
+            let menor = i;
+            if (izq < datos.length && ColaPrioridad.menor(datos[izq], datos[menor])) menor = izq;
+            if (der < datos.length && ColaPrioridad.menor(datos[der], datos[menor])) menor = der;
+            if (menor === i) break;
+            [datos[i], datos[menor]] = [datos[menor], datos[i]];
+            i = menor;
+          }
+        }
+        return primero;
+      }
+    }
+
+    /**
+     * Algoritmo de Dijkstra con cola de prioridad.
+     * Devuelve { ruta, distancia, visitados }:
+     *  - ruta: lista de pueblos de inicio a fin (o null si no hay camino)
+     *  - distancia: km totales (o Infinity)
+     *  - visitados: orden en que Dijkstra fijó cada pueblo (extra, para mostrar cómo calcula)
+     */
+    function dijkstra(grafo, inicio, fin) {
+      if (!grafo.has(inicio) || !grafo.has(fin)) return { ruta: null, distancia: Infinity, visitados: [] };
+
+      const distancias = new Map([...grafo.keys()].map((nodo) => [nodo, Infinity]));
+      distancias.set(inicio, 0);
+      const padres = new Map([...grafo.keys()].map((nodo) => [nodo, null]));
+
+      const cola = new ColaPrioridad();
+      cola.push([0, inicio]);
+      const visitados = [];
+
+      while (cola.longitud > 0) {
+        const [distActual, nodoActual] = cola.pop();
+
+        if (distActual > distancias.get(nodoActual)) continue; // entrada vieja de la cola
+
+        visitados.push({ nodo: nodoActual, distancia: distActual, padre: padres.get(nodoActual) });
+        if (nodoActual === fin) break;
+
+        for (const [vecino, peso] of grafo.get(nodoActual)) {
+          const nuevaDistancia = distActual + peso;
+          if (nuevaDistancia < distancias.get(vecino)) {
+            distancias.set(vecino, nuevaDistancia);
+            padres.set(vecino, nodoActual);
+            cola.push([nuevaDistancia, vecino]);
+          }
+        }
+      }
+
+      if (distancias.get(fin) === Infinity) return { ruta: null, distancia: Infinity, visitados };
+
+      const ruta = [];
+      let actual = fin;
+      while (actual !== null) {
+        ruta.push(actual);
+        actual = padres.get(actual);
+      }
+      ruta.reverse();
+
+      return { ruta, distancia: distancias.get(fin), visitados };
+    }
+
+    /** Km de la carretera entre dos pueblos vecinos (0 si no existe, igual que el original). */
+    function obtenerPesoArista(grafo, nodoA, nodoB) {
+      for (const [vecino, peso] of grafo.get(nodoA)) {
+        if (vecino === nodoB) return peso;
+      }
+      return 0;
+    }
+
+    /** Mismas validaciones que el menú original, ahora sobre lo elegido en los selectores. */
+    function validarSeleccion(origen, destino, pueblos = PUEBLOS) {
+      if (!origen) return { ok: false, campo: "origen", mensaje: "Seleccione el pueblo de origen." };
+      if (!pueblos.includes(origen)) return { ok: false, campo: "origen", mensaje: "Opción fuera de rango. Intente de nuevo." };
+      if (!destino) return { ok: false, campo: "destino", mensaje: "Seleccione el pueblo de destino." };
+      if (!pueblos.includes(destino)) return { ok: false, campo: "destino", mensaje: "Opción fuera de rango. Intente de nuevo." };
+      return { ok: true };
+    }
+
+    /**
+     * Equivale a lo que hacía main() después de elegir origen y destino.
+     * tipo: "mismo" (ya estás en el destino) | "ruta" (ruta encontrada) | "sinRuta" (no hay camino)
+     */
+    function consultarRuta(grafo, origen, destino) {
+      const { ruta, distancia, visitados } = dijkstra(grafo, origen, destino);
+      if (!ruta) return { tipo: "sinRuta", origen, destino, ruta: null, distancia: Infinity, tramos: [], visitados };
+
+      const tramos = [];
+      for (let i = 0; i < ruta.length - 1; i++) {
+        tramos.push({ desde: ruta[i], hasta: ruta[i + 1], km: obtenerPesoArista(grafo, ruta[i], ruta[i + 1]) });
+      }
+      return { tipo: origen === destino ? "mismo" : "ruta", origen, destino, ruta, distancia, tramos, visitados };
+    }
+
+    // Permite probar esta lógica con Node.js sin afectar al navegador.
+    if (typeof module !== "undefined" && module.exports) {
+      module.exports = { PUEBLOS, CARRETERAS, crearGrafo, ColaPrioridad, dijkstra, obtenerPesoArista, validarSeleccion, consultarRuta };
+    }
+  </script>
+
+  <!-- ==========================================================================
+       4) INTERFAZ (JavaScript: conecta la lógica con la página)
+
+       Equivalencia con el programa de consola:
+         Elegir origen y destino (1-7) ..... selectores "Pueblo de origen" y "Pueblo de destino"
+         [!] fuera de rango / no numérico .. mensajes bajo cada selector
+         Algoritmo, ruta, km, tramos ....... tarjeta "Resultado"
+         ¿Desea consultar otra ruta? (S/N) . no hace falta: se cambia la selección y se vuelve a calcular
+       ========================================================================== -->
+  <script id="interfaz">
+    "use strict";
+
+    const grafo = crearGrafo();
+
+    // Ubicación aproximada [latitud, longitud] solo para dibujar el esquema del mapa.
+    const UBICACIONES = {
+      Sisal: [21.1667, -90.0333], Motul: [21.0953, -89.2817], Izamal: [20.9333, -89.0167], Espita: [21.0128, -88.3002],
+      Valladolid: [20.6897, -88.2017], Mani: [20.3889, -89.3892], Tekax: [20.2072, -89.2889],
+    };
+    // Dónde se escribe el nombre de cada pueblo respecto a su punto: [dx, dy, anclaje]
+    const ETIQUETAS = {
+      Sisal: [0, -17, "middle"], Motul: [0, -17, "middle"], Izamal: [15, -13, "start"], Espita: [0, -17, "middle"],
+      Valladolid: [0, 28, "middle"], Mani: [-16, 5, "end"], Tekax: [16, 5, "start"],
+    };
+    const MAPA = { ancho: 720, alto: 430, margenX: 70, margenY: 52 };
+
+    const estado = { origen: "", destino: "", resultado: null };
+
+    const $ = (id) => document.getElementById(id);
+    const ref = {
+      form: $("formulario"), selOrigen: $("selOrigen"), selDestino: $("selDestino"), errOrigen: $("errOrigen"), errDestino: $("errDestino"),
+      btnIntercambiar: $("btnIntercambiar"), resultado: $("resultado"), mapa: $("mapa"), tabla: $("tablaCarreteras"),
+    };
+
+    /** Crea elementos HTML de forma segura (usa textContent, nunca innerHTML con datos). */
+    function el(etiqueta, props = {}, ...hijos) {
+      const nodo = document.createElement(etiqueta);
+      const { clase, texto, ...atributos } = props;
+      if (clase) nodo.className = clase;
+      if (texto !== undefined) nodo.textContent = texto;
+      for (const [nombre, valor] of Object.entries(atributos)) nodo.setAttribute(nombre, valor);
+      nodo.append(...hijos);
+      return nodo;
+    }
+    function svg(etiqueta, atributos = {}, texto) {
+      const nodo = document.createElementNS("http://www.w3.org/2000/svg", etiqueta);
+      for (const [nombre, valor] of Object.entries(atributos)) nodo.setAttribute(nombre, String(valor));
+      if (texto !== undefined) nodo.textContent = texto;
+      return nodo;
+    }
+
+    const clavesTramo = (a, b) => [a, b].sort().join("|");
+    const km = (valor) => `${valor} km`;
+
+    /* ---------- Selectores ---------- */
+    function renderSelectores() {
+      for (const [sel, texto] of [[ref.selOrigen, "Seleccione el origen…"], [ref.selDestino, "Seleccione el destino…"]]) {
+        sel.replaceChildren(el("option", { value: "", texto }), ...PUEBLOS.map((p, i) => el("option", { value: p, texto: `${i + 1}. ${p}` })));
+      }
+      ref.selOrigen.value = estado.origen;
+      ref.selDestino.value = estado.destino;
+    }
+
+    function limpiarErrores() {
+      for (const [sel, err] of [[ref.selOrigen, ref.errOrigen], [ref.selDestino, ref.errDestino]]) {
+        err.textContent = "";
+        sel.setAttribute("aria-invalid", "false");
+      }
+    }
+
+    function mostrarError(campo, mensaje) {
+      const [sel, err] = campo === "origen" ? [ref.selOrigen, ref.errOrigen] : [ref.selDestino, ref.errDestino];
+      err.textContent = mensaje;
+      sel.setAttribute("aria-invalid", "true");
+      sel.focus();
+    }
+
+    /* ---------- Mapa ---------- */
+    function calcularPosiciones() {
+      const lats = Object.values(UBICACIONES).map((u) => u[0]);
+      const lons = Object.values(UBICACIONES).map((u) => u[1]);
+      const [latMin, latMax, lonMin, lonMax] = [Math.min(...lats), Math.max(...lats), Math.min(...lons), Math.max(...lons)];
+      const anchoUtil = MAPA.ancho - 2 * MAPA.margenX;
+      const altoUtil = MAPA.alto - 2 * MAPA.margenY;
+      const posiciones = {};
+      for (const [pueblo, [lat, lon]] of Object.entries(UBICACIONES)) {
+        posiciones[pueblo] = {
+          x: MAPA.margenX + ((lon - lonMin) / (lonMax - lonMin)) * anchoUtil,
+          y: MAPA.margenY + ((latMax - lat) / (latMax - latMin)) * altoUtil,
+        };
+      }
+      return posiciones;
+    }
+    const POSICIONES = calcularPosiciones();
+
+    function renderMapa() {
+      const resultado = estado.resultado && estado.resultado.ruta ? estado.resultado : null;
+      const enRuta = new Set(resultado ? resultado.ruta : []);
+      const tramosRuta = new Set(resultado ? resultado.tramos.map((t) => clavesTramo(t.desde, t.hasta)) : []);
+
+      const lienzo = svg("svg", { viewBox: `0 0 ${MAPA.ancho} ${MAPA.alto}`, role: "img",
+        "aria-label": "Mapa esquemático con 7 Pueblos Mágicos de Yucatán y las 10 carreteras que los conectan" });
+      lienzo.append(svg("rect", { class: "mapa-fondo", width: MAPA.ancho, height: MAPA.alto }));
+      // Franja de mar al norte (referencia: Sisal está en la costa del Golfo de México)
+      lienzo.append(svg("path", { class: "mapa-mar", d: `M0 0 H${MAPA.ancho} V20 C 520 38, 300 12, 150 34 C 90 42, 40 30, 0 38 Z` }));
+      lienzo.append(svg("text", { class: "mapa-texto-mar", x: 24, y: 17 }, "GOLFO DE MÉXICO"));
+
+      // 1) Carreteras (las de la ruta se dibujan después para quedar encima)
+      const carreteras = CARRETERAS.filter(([a, b]) => !tramosRuta.has(clavesTramo(a, b)));
+      for (const [a, b] of carreteras) {
+        const [pa, pb] = [POSICIONES[a], POSICIONES[b]];
+        lienzo.append(svg("path", { class: "arista", d: `M${pa.x} ${pa.y} L${pb.x} ${pb.y}` }));
+      }
+      if (resultado) {
+        resultado.tramos.forEach((tramo, i) => {
+          const [pa, pb] = [POSICIONES[tramo.desde], POSICIONES[tramo.hasta]];
+          // La línea va de "desde" a "hasta": así la animación avanza en el sentido del viaje.
+          lienzo.append(svg("path", { class: "arista arista--ruta", pathLength: 1, d: `M${pa.x} ${pa.y} L${pb.x} ${pb.y}`,
+            style: `animation-delay:${i * 0.5}s` }));
+        });
+      }
+
+      // 2) Kilómetros de cada carretera
+      for (const [a, b, km_] of CARRETERAS) {
+        const [pa, pb] = [POSICIONES[a], POSICIONES[b]];
+        const activa = tramosRuta.has(clavesTramo(a, b));
+        lienzo.append(svg("text", { class: `arista-km${activa ? " arista-km--ruta" : ""}`, x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 + 4 }, String(km_)));
+      }
+
+      // 3) Pueblos
+      for (const pueblo of PUEBLOS) {
+        const { x, y } = POSICIONES[pueblo];
+        const [dx, dy, ancla] = ETIQUETAS[pueblo];
+        const grupo = svg("g", { class: enRuta.has(pueblo) ? "nodo nodo--ruta" : "nodo" });
+        grupo.append(svg("title", {}, pueblo));
+        grupo.append(svg("circle", { class: "nodo-punto", cx: x, cy: y, r: 9 }));
+        grupo.append(svg("text", { class: "nodo-nombre", x: x + dx, y: y + dy, "text-anchor": ancla }, pueblo));
+        lienzo.append(grupo);
+      }
+
+      // 4) Marcadores A (origen) y B (destino), también mientras se elige
+      const origen = estado.origen, destino = estado.destino;
+      const marcar = (pueblo, clase, texto) => {
+        const { x, y } = POSICIONES[pueblo];
+        lienzo.append(svg("circle", { class: `marcador ${clase}`, cx: x, cy: y, r: 14 }));
+        lienzo.append(svg("text", { class: "marcador-texto", x, y: y + 4.5 }, texto));
+      };
+      if (origen && origen === destino) marcar(origen, "marcador--ambos", "A·B");
+      else {
+        if (origen) marcar(origen, "marcador--origen", "A");
+        if (destino) marcar(destino, "marcador--destino", "B");
+      }
+
+      ref.mapa.replaceChildren(lienzo);
+    }
+
+    /* ---------- Carreteras ---------- */
+    function renderCarreteras() {
+      const resultado = estado.resultado && estado.resultado.ruta ? estado.resultado : null;
+      const tramosRuta = new Set(resultado ? resultado.tramos.map((t) => clavesTramo(t.desde, t.hasta)) : []);
+      ref.tabla.replaceChildren(...CARRETERAS.map(([a, b, km_]) =>
+        el("tr", { clase: tramosRuta.has(clavesTramo(a, b)) ? "en-ruta" : "" },
+          el("td", { texto: `${a} – ${b}` }), el("td", { clase: "num", texto: km(km_) }))
+      ));
+    }
+
+    /* ---------- Resultado ---------- */
+    function aviso(tipo, simbolo, texto) {
+      return el("div", { clase: `aviso aviso--${tipo}` }, el("span", { clase: "aviso__icono", "aria-hidden": "true", texto: simbolo }), el("span", { texto }));
+    }
+
+    function crearTraza(resultado) {
+      const filas = resultado.visitados.map((v, i) =>
+        el("tr", {}, el("td", { clase: "num", texto: String(i + 1) }), el("td", { texto: v.nodo }),
+          el("td", { clase: "num", texto: km(v.distancia) }), el("td", { texto: v.padre === null ? "— (origen)" : v.padre })));
+      return el("details", { clase: "traza" },
+        el("summary", { texto: "Cómo lo calculó Dijkstra" }),
+        el("div", { clase: "traza__cuerpo" },
+          el("p", { clase: "muted", texto: "Dijkstra fija siempre primero el pueblo pendiente más cercano al origen, y se detiene cuando fija el destino. Esta es la secuencia:" }),
+          el("div", { clase: "tabla-scroll" }, el("table", {},
+            el("thead", {}, el("tr", {}, el("th", { clase: "num", scope: "col", texto: "Paso" }), el("th", { scope: "col", texto: "Pueblo fijado" }),
+              el("th", { clase: "num", scope: "col", texto: "Distancia acumulada" }), el("th", { scope: "col", texto: "Llegó desde" }))),
+            el("tbody", {}, ...filas)))));
+    }
+
+    function renderResultado() {
+      const r = estado.resultado;
+      ref.resultado.replaceChildren();
+
+      if (!r) {
+        ref.resultado.append(el("p", { clase: "placeholder", texto: "Elige un origen y un destino y pulsa \"Calcular ruta más corta\"." }));
+        return;
+      }
+      if (r.tipo === "sinRuta") {
+        ref.resultado.append(aviso("error", "✕", "No existe una ruta conectada entre esos pueblos."));
+        return;
+      }
+
+      if (r.tipo === "mismo") ref.resultado.append(aviso("info", "i", "Ya te encuentras en el destino."));
+      else {
+        ref.resultado.append(aviso("ok", "✓", "Ruta encontrada"), el("p", { clase: "algoritmo", texto: "Algoritmo utilizado: Dijkstra" }));
+      }
+
+      ref.resultado.append(el("dl", { clase: "cifras" },
+        el("div", { clase: "cifra cifra--principal" }, el("dt", { texto: "Distancia total" }), el("dd", {}, String(r.distancia), el("small", { texto: "km" }))),
+        el("div", { clase: "cifra" }, el("dt", { texto: "Tramos" }), el("dd", { texto: String(r.tramos.length) }))));
+
+      if (r.tipo === "ruta") {
+        ref.resultado.append(el("h3", { clase: "subtitulo", texto: "Tramo por tramo" }),
+          el("ol", { clase: "tramos" }, ...r.tramos.map((t, i) =>
+            el("li", { clase: "tramo", style: `animation-delay:${i * 0.08}s` },
+              el("span", { clase: "tramo__num", "aria-hidden": "true", texto: String(i + 1) }),
+              el("span", { clase: "tramo__ruta" }, t.desde, el("i", { "aria-hidden": "true", texto: "→" }), t.hasta),
+              el("span", { clase: "tramo__km", texto: km(t.km) })))));
+      }
+
+      const pasos = [];
+      r.ruta.forEach((pueblo, i) => {
+        if (i > 0) pasos.push(el("span", { clase: "flecha", "aria-hidden": "true", texto: "→" }));
+        const extra = i === 0 && r.tipo === "ruta" ? " paso--origen" : i === r.ruta.length - 1 && r.tipo === "ruta" ? " paso--destino" : "";
+        pasos.push(el("span", { clase: `paso${extra}`, texto: pueblo }));
+      });
+      ref.resultado.append(el("h3", { clase: "subtitulo", texto: "Ruta completa" }), el("div", { clase: "ruta-completa" }, ...pasos));
+
+      if (r.tipo === "ruta") ref.resultado.append(crearTraza(r));
+    }
+
+    function renderTodo() {
+      renderMapa();
+      renderCarreteras();
+      renderResultado();
+    }
+
+    /* ==========================================================================
+       EVENTOS
+       ========================================================================== */
+    function alCambiarSeleccion() {
+      estado.origen = ref.selOrigen.value;
+      estado.destino = ref.selDestino.value;
+      estado.resultado = null; // la selección cambió: el resultado anterior ya no aplica
+      limpiarErrores();
+      renderTodo();
+    }
+    ref.selOrigen.addEventListener("change", alCambiarSeleccion);
+    ref.selDestino.addEventListener("change", alCambiarSeleccion);
+
+    ref.btnIntercambiar.addEventListener("click", () => {
+      [ref.selOrigen.value, ref.selDestino.value] = [ref.selDestino.value, ref.selOrigen.value];
+      alCambiarSeleccion();
+    });
+
+    ref.form.addEventListener("submit", (evento) => {
+      evento.preventDefault();
+      limpiarErrores();
+      estado.origen = ref.selOrigen.value;
+      estado.destino = ref.selDestino.value;
+
+      const validacion = validarSeleccion(estado.origen, estado.destino);
+      if (!validacion.ok) {
+        estado.resultado = null;
+        renderTodo();
+        mostrarError(validacion.campo, validacion.mensaje);
+        return;
+      }
+      estado.resultado = consultarRuta(grafo, estado.origen, estado.destino);
+      renderTodo();
+    });
+
+    /* ---------- Arranque ---------- */
+    renderSelectores();
+    renderTodo();
+  </script>
+</body>
+</html>
